@@ -86,11 +86,20 @@ The app hosted at [excalidraw.com](https://excalidraw.com) is a minimal showcase
 
 We'll be adding these features as drop-in plugins for the npm package in the future.
 
-## Quick start
+## Documentation
 
-**Note:** following instructions are for installing the Excalidraw [npm package](https://www.npmjs.com/package/@excalidraw/excalidraw) when integrating Excalidraw into your own app. To run the repository locally for development, please refer to our [Development Guide](https://docs.excalidraw.com/docs/introduction/development).
+Comprehensive documentation for developers and contributors:
 
-Use `npm` or `yarn` to install the package.
+- **[Project Overview & PDR](./docs/project-overview-pdr.md)** - Vision, goals, features, and product requirements
+- **[Codebase Summary](./docs/codebase-summary.md)** - Repository structure, packages, and key files
+- **[Code Standards](./docs/code-standards.md)** - Coding conventions, naming, and best practices
+- **[System Architecture](./docs/system-architecture.md)** - Architecture patterns, data flow, and design decisions
+
+## Quick Start
+
+### For Integrators (Using npm package)
+
+Install the Excalidraw [npm package](https://www.npmjs.com/package/@excalidraw/excalidraw) to embed in your app:
 
 ```bash
 npm install react react-dom @excalidraw/excalidraw
@@ -98,7 +107,58 @@ npm install react react-dom @excalidraw/excalidraw
 yarn add react react-dom @excalidraw/excalidraw
 ```
 
-Check out our [documentation](https://docs.excalidraw.com/docs/@excalidraw/excalidraw/installation) for more details!
+**Basic Usage:**
+
+```tsx
+import { Excalidraw } from "@excalidraw/excalidraw";
+import "@excalidraw/excalidraw/index.css";
+
+export default function App() {
+  return (
+    <div style={{ height: "500px" }}>
+      <Excalidraw />
+    </div>
+  );
+}
+```
+
+Check out our [API documentation](https://docs.excalidraw.com/docs/@excalidraw/excalidraw/installation) for more details!
+
+### For Contributors (Local Development)
+
+Clone and run the repository locally:
+
+```bash
+# Clone the repository
+git clone https://github.com/excalidraw/excalidraw.git
+cd excalidraw
+
+# Install dependencies
+yarn install
+
+# Start development server (opens http://localhost:3000)
+yarn start
+
+# Run tests
+yarn test
+
+# Type checking
+yarn test:typecheck
+
+# Auto-fix linting and formatting
+yarn fix
+```
+
+**Development Commands:**
+
+- `yarn start` - Start dev server for excalidraw-app
+- `yarn build` - Build production bundle
+- `yarn test` - Run tests in watch mode
+- `yarn test:update` - Update test snapshots
+- `yarn test:typecheck` - Run TypeScript type checking
+- `yarn fix` - Auto-fix ESLint and Prettier issues
+
+See [CLAUDE.md](./CLAUDE.md) for project structure details.
 
 ## Contributing
 
