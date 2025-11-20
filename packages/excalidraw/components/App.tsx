@@ -408,6 +408,13 @@ import { EraserTrail } from "../eraser";
 
 import { getShortcutKey } from "../shortcut";
 
+import {
+  clampPointToRestrictedArea,
+  shouldEnforceRestriction,
+  isElementCompletelyInRestrictedArea,
+  clampDragOffsetToRestrictedArea,
+} from "../utils/restrictedArea";
+
 import ConvertElementTypePopup, {
   getConversionTypeFromElements,
   convertElementTypePopupAtom,
@@ -685,7 +692,28 @@ class App extends React.Component<AppProps, AppState> {
       objectsSnapModeEnabled = false,
       theme = defaultAppState.theme,
       name = `${t("labels.untitled")}-${getDateTime()}`,
+      restrictedArea,
     } = props;
+
+    // Merge restrictedArea prop with defaults and validate
+    const mergedRestrictedArea = restrictedArea
+      ? {
+          enabled: restrictedArea.enabled ?? true,
+          x: restrictedArea.x ?? 0,
+          y: restrictedArea.y ?? 0,
+          width: Math.max(1, Math.min(restrictedArea.width ?? 1024, 100000)),
+          height: Math.max(1, Math.min(restrictedArea.height ?? 1024, 100000)),
+          showBoundary: restrictedArea.showBoundary ?? true,
+          boundaryStyle: {
+            strokeColor: restrictedArea.boundaryStyle?.strokeColor ?? "#6965db",
+            strokeWidth: Math.max(0.5, Math.min(restrictedArea.boundaryStyle?.strokeWidth ?? 2, 20)),
+            backgroundColor: restrictedArea.boundaryStyle?.backgroundColor ?? null,
+            opacity: Math.max(0, Math.min(restrictedArea.boundaryStyle?.opacity ?? 0.1, 1)),
+          },
+          enforcement: restrictedArea.enforcement ?? "soft",
+        }
+      : null;
+
     this.state = {
       ...defaultAppState,
       theme,
@@ -696,6 +724,7 @@ class App extends React.Component<AppProps, AppState> {
       objectsSnapModeEnabled,
       gridModeEnabled: gridModeEnabled ?? defaultAppState.gridModeEnabled,
       name,
+      restrictedArea: mergedRestrictedArea,
       width: window.innerWidth,
       height: window.innerHeight,
     };
@@ -5890,7 +5919,16 @@ class App extends React.Component<AppProps, AppState> {
       }
     }
 
-    const scenePointer = viewportCoordsToSceneCoords(event, this.state);
+    let scenePointer = viewportCoordsToSceneCoords(event, this.state);
+
+    // Clamp pointer to restricted area if enabled
+    if (shouldEnforceRestriction(this.state.restrictedArea)) {
+      scenePointer = clampPointToRestrictedArea(
+        scenePointer,
+        this.state.restrictedArea,
+      );
+    }
+
     const { x: scenePointerX, y: scenePointerY } = scenePointer;
 
     if (
@@ -6890,10 +6928,19 @@ class App extends React.Component<AppProps, AppState> {
     this.removePointer(event);
     this.lastPointerUpEvent = event;
 
-    const scenePointer = viewportCoordsToSceneCoords(
+    let scenePointer = viewportCoordsToSceneCoords(
       { clientX: event.clientX, clientY: event.clientY },
       this.state,
     );
+
+    // Clamp pointer to restricted area if enabled
+    if (shouldEnforceRestriction(this.state.restrictedArea)) {
+      scenePointer = clampPointToRestrictedArea(
+        scenePointer,
+        this.state.restrictedArea,
+      );
+    }
+
     const clicklength =
       event.timeStamp - (this.lastPointerDownEvent?.timeStamp ?? 0);
 
@@ -7129,7 +7176,13 @@ class App extends React.Component<AppProps, AppState> {
   private initialPointerDownState(
     event: React.PointerEvent<HTMLElement>,
   ): PointerDownState {
-    const origin = viewportCoordsToSceneCoords(event, this.state);
+    let origin = viewportCoordsToSceneCoords(event, this.state);
+
+    // Clamp pointer to restricted area if enabled
+    if (shouldEnforceRestriction(this.state.restrictedArea)) {
+      origin = clampPointToRestrictedArea(origin, this.state.restrictedArea);
+    }
+
     const selectedElements = this.scene.getSelectedElements(this.state);
     const [minX, minY, maxX, maxY] = getCommonBounds(selectedElements);
     const isElbowArrowOnly = selectedElements.findIndex(isElbowArrow) === 0;
@@ -8274,7 +8327,15 @@ class App extends React.Component<AppProps, AppState> {
       if (this.state.openDialog?.name === "elementLinkSelector") {
         return;
       }
-      const pointerCoords = viewportCoordsToSceneCoords(event, this.state);
+      let pointerCoords = viewportCoordsToSceneCoords(event, this.state);
+
+      // Clamp pointer to restricted area if enabled
+      if (shouldEnforceRestriction(this.state.restrictedArea)) {
+        pointerCoords = clampPointToRestrictedArea(
+          pointerCoords,
+          this.state.restrictedArea,
+        );
+      }
 
       if (this.state.activeLockedId) {
         this.setState({
@@ -8548,7 +8609,7 @@ class App extends React.Component<AppProps, AppState> {
           !this.state.editingTextElement &&
           this.state.activeEmbeddable?.state !== "active"
         ) {
-          const dragOffset = {
+          let dragOffset = {
             x: pointerCoords.x - pointerDownState.drag.origin.x,
             y: pointerCoords.y - pointerDownState.drag.origin.y,
           };
@@ -8556,6 +8617,39 @@ class App extends React.Component<AppProps, AppState> {
           const originalElements = [
             ...pointerDownState.originalElements.values(),
           ];
+
+          // Clamp drag offset to restricted area for all selected elements
+          if (
+            shouldEnforceRestriction(this.state.restrictedArea) &&
+            selectedElements.length > 0
+          ) {
+            // Find the most restrictive clamp across all selected elements
+            let minClampedOffsetX = dragOffset.x;
+            let minClampedOffsetY = dragOffset.y;
+
+            for (const element of selectedElements) {
+              const clampedOffset = clampDragOffsetToRestrictedArea(
+                element,
+                dragOffset.x,
+                dragOffset.y,
+                this.state.restrictedArea,
+                elementsMap,
+              );
+
+              // Use the most restrictive offset (smallest absolute value)
+              if (Math.abs(clampedOffset.x) < Math.abs(minClampedOffsetX)) {
+                minClampedOffsetX = clampedOffset.x;
+              }
+              if (Math.abs(clampedOffset.y) < Math.abs(minClampedOffsetY)) {
+                minClampedOffsetY = clampedOffset.y;
+              }
+            }
+
+            dragOffset = {
+              x: minClampedOffsetX,
+              y: minClampedOffsetY,
+            };
+          }
 
           // We only drag in one direction if shift is pressed
           const lockDirection = event.shiftKey;
@@ -9979,6 +10073,29 @@ class App extends React.Component<AppProps, AppState> {
         }
         // reset cursor
         setCursor(this.interactiveCanvas, CURSOR_TYPE.AUTO);
+        return;
+      }
+
+      // Cleanup elements outside restricted area on release
+      if (
+        newElement &&
+        shouldEnforceRestriction(this.state.restrictedArea) &&
+        !isElementCompletelyInRestrictedArea(
+          newElement,
+          this.state.restrictedArea,
+          this.scene.getNonDeletedElementsMap(),
+        )
+      ) {
+        // Element extends outside restricted area - mark as deleted
+        this.scene.replaceAllElements([
+          ...this.scene.getElementsIncludingDeleted().map((el) =>
+            el.id === newElement.id
+              ? newElementWith(el, { isDeleted: true })
+              : el,
+          ),
+        ]);
+        this.setState({ newElement: null, suggestedBindings: [] });
+        this.store.scheduleCapture();
         return;
       }
 

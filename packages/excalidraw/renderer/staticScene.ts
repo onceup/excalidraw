@@ -139,6 +139,59 @@ export const frameClip = (
   );
 };
 
+/**
+ * Render the restricted area boundary on the canvas
+ */
+const renderRestrictedAreaBoundary = (
+  context: CanvasRenderingContext2D,
+  area: NonNullable<StaticCanvasAppState["restrictedArea"]>,
+  appState: StaticCanvasAppState,
+) => {
+  const { x, y, width, height, boundaryStyle } = area;
+  const { scrollX, scrollY, zoom } = appState;
+
+  context.save();
+
+  // Apply viewport transform
+  const scaledX = x + scrollX;
+  const scaledY = y + scrollY;
+
+  // Render background fill if specified
+  if (boundaryStyle.backgroundColor) {
+    context.fillStyle = boundaryStyle.backgroundColor;
+    context.globalAlpha = boundaryStyle.opacity;
+    context.fillRect(scaledX, scaledY, width, height);
+    context.globalAlpha = 1;
+  }
+
+  // Render border
+  context.strokeStyle = boundaryStyle.strokeColor;
+  context.lineWidth = boundaryStyle.strokeWidth / zoom.value; // Zoom-aware
+  context.setLineDash([10 / zoom.value, 5 / zoom.value]); // Dashed line
+  context.strokeRect(scaledX, scaledY, width, height);
+  context.setLineDash([]); // Reset
+
+  context.restore();
+};
+
+/**
+ * Apply restricted area clipping (similar to frameClip pattern)
+ */
+const applyRestrictedAreaClip = (
+  context: CanvasRenderingContext2D,
+  area: NonNullable<StaticCanvasAppState["restrictedArea"]>,
+  appState: StaticCanvasAppState,
+) => {
+  const { x, y, width, height } = area;
+  const { scrollX, scrollY } = appState;
+
+  context.translate(x + scrollX, y + scrollY);
+  context.beginPath();
+  context.rect(0, 0, width, height);
+  context.clip();
+  context.translate(-(x + scrollX), -(y + scrollY));
+};
+
 type LinkIconCanvas = HTMLCanvasElement & { zoom: number };
 
 const linkIconCanvasCache: {
@@ -257,6 +310,11 @@ const _renderStaticScene = ({
     );
   }
 
+  // Render restricted area boundary
+  if (appState.restrictedArea?.enabled && appState.restrictedArea.showBoundary) {
+    renderRestrictedAreaBoundary(context, appState.restrictedArea, appState);
+  }
+
   const groupsToBeAddedToFrame = new Set<string>();
 
   visibleElements.forEach((element) => {
@@ -297,59 +355,70 @@ const _renderStaticScene = ({
 
         context.save();
 
-        if (
-          frameId &&
-          appState.frameRendering.enabled &&
-          appState.frameRendering.clip
-        ) {
-          const frame = getTargetFrame(element, elementsMap, appState);
+        try {
+          // Apply restricted area clipping for soft enforcement
           if (
-            frame &&
-            shouldApplyFrameClip(
-              element,
-              frame,
-              appState,
-              elementsMap,
-              inFrameGroupsMap,
-            )
+            appState.restrictedArea?.enabled &&
+            appState.restrictedArea.enforcement === "soft" &&
+            !frameId // Don't double-clip framed elements
           ) {
-            frameClip(frame, context, renderConfig, appState);
+            applyRestrictedAreaClip(context, appState.restrictedArea, appState);
           }
-          renderElement(
-            element,
-            elementsMap,
-            allElementsMap,
-            rc,
-            context,
-            renderConfig,
-            appState,
-          );
-        } else {
-          renderElement(
-            element,
-            elementsMap,
-            allElementsMap,
-            rc,
-            context,
-            renderConfig,
-            appState,
-          );
-        }
 
-        const boundTextElement = getBoundTextElement(element, elementsMap);
-        if (boundTextElement) {
-          renderElement(
-            boundTextElement,
-            elementsMap,
-            allElementsMap,
-            rc,
-            context,
-            renderConfig,
-            appState,
-          );
-        }
+          if (
+            frameId &&
+            appState.frameRendering.enabled &&
+            appState.frameRendering.clip
+          ) {
+            const frame = getTargetFrame(element, elementsMap, appState);
+            if (
+              frame &&
+              shouldApplyFrameClip(
+                element,
+                frame,
+                appState,
+                elementsMap,
+                inFrameGroupsMap,
+              )
+            ) {
+              frameClip(frame, context, renderConfig, appState);
+            }
+            renderElement(
+              element,
+              elementsMap,
+              allElementsMap,
+              rc,
+              context,
+              renderConfig,
+              appState,
+            );
+          } else {
+            renderElement(
+              element,
+              elementsMap,
+              allElementsMap,
+              rc,
+              context,
+              renderConfig,
+              appState,
+            );
+          }
 
-        context.restore();
+          const boundTextElement = getBoundTextElement(element, elementsMap);
+          if (boundTextElement) {
+            renderElement(
+              boundTextElement,
+              elementsMap,
+              allElementsMap,
+              rc,
+              context,
+              renderConfig,
+              appState,
+            );
+          }
+        } finally {
+          context.restore();
+        }
 
         if (!isExporting) {
           renderLinkIcon(element, context, appState, elementsMap);

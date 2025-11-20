@@ -203,6 +203,7 @@ export type StaticCanvasAppState = Readonly<
     gridSize: AppState["gridSize"];
     gridStep: AppState["gridStep"];
     frameRendering: AppState["frameRendering"];
+    restrictedArea: AppState["restrictedArea"];
     currentHoveredFontFamily: AppState["currentHoveredFontFamily"];
     hoveredElementIds: AppState["hoveredElementIds"];
     // Cropping
@@ -301,6 +302,21 @@ export interface AppState {
     outline: boolean;
     clip: boolean;
   };
+  restrictedArea: {
+    enabled: boolean;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    showBoundary: boolean;
+    boundaryStyle: {
+      strokeColor: string;
+      strokeWidth: number;
+      backgroundColor: string | null;
+      opacity: number;
+    };
+    enforcement: "soft" | "trim";
+  } | null;
   editingFrame: string | null;
   elementsToHighlight: NonDeleted<ExcalidrawElement>[] | null;
   /**
@@ -627,6 +643,12 @@ export interface ExcalidrawProps {
     element: NonDeleted<ExcalidrawEmbeddableElement>,
     appState: AppState,
   ) => JSX.Element | null;
+  /**
+   * Restrict drawing to a specific area on the canvas.
+   * When enabled, elements outside the boundary will be clipped during rendering.
+   * @default null (unrestricted)
+   */
+  restrictedArea?: Partial<AppState["restrictedArea"]> | null;
   aiEnabled?: boolean;
   showDeprecatedFonts?: boolean;
   renderScrollbars?: boolean;
