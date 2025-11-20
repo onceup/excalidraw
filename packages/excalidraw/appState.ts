@@ -115,7 +115,7 @@ export const getDefaultAppState = (): Omit<
         backgroundColor: null,
         opacity: 0.1,
       },
-      enforcement: "soft",
+      enforcement: "trim",
     },
     frameToHighlight: null,
     editingFrame: null,

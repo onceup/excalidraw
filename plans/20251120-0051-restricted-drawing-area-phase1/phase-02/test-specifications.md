@@ -597,7 +597,8 @@ describe("Performance: Drawing 1000 Elements", () => {
       await new Promise((resolve) => requestAnimationFrame(resolve));
     }
 
-    const avgFrameTime = frameTimes.reduce((a, b) => a + b, 0) / frameTimes.length;
+    const avgFrameTime =
+      frameTimes.reduce((a, b) => a + b, 0) / frameTimes.length;
     const maxFrameTime = Math.max(...frameTimes);
 
     expect(avgFrameTime).toBeLessThan(16.6); // 60fps average
@@ -611,6 +612,7 @@ describe("Performance: Drawing 1000 Elements", () => {
 ### Scenario 1: Basic Drawing Tools (30 min)
 
 **Setup:**
+
 1. Enable restricted area: `{ enabled: true, x: 0, y: 0, width: 1024, height: 1024 }`
 2. Set zoom to 1x
 3. Center canvas on restricted area
@@ -618,31 +620,37 @@ describe("Performance: Drawing 1000 Elements", () => {
 **Test Cases:**
 
 **1.1 Rectangle Tool**
+
 - [ ] Click inside (500, 500), drag to (600, 600) → Rectangle created
 - [ ] Click inside (500, 500), drag outside (1500, 1500) → Rectangle clamped to boundary
 - [ ] Click outside (1500, 1500) → No rectangle created
 
 **1.2 Ellipse Tool**
+
 - [ ] Click inside (500, 500), drag to (600, 600) → Ellipse created
 - [ ] Click inside (800, 800), drag outside (1200, 1200) → Ellipse clamped
 - [ ] Click outside (1500, 1500) → No ellipse created
 
 **1.3 Diamond Tool**
+
 - [ ] Click inside (500, 500), drag to (600, 600) → Diamond created
 - [ ] Click inside (900, 900), drag outside (1100, 1100) → Diamond clamped
 - [ ] Click outside (1500, 1500) → No diamond created
 
 **1.4 Arrow Tool**
+
 - [ ] Click inside (500, 500), drag to (700, 700) → Arrow created
 - [ ] Click inside (500, 500), drag outside (1500, 1500) → Arrow endpoint clamped
 - [ ] Click outside (1500, 1500) → No arrow created
 
 **1.5 Line Tool**
+
 - [ ] Click inside (500, 500), drag to (700, 700) → Line created
 - [ ] Click inside (500, 500), drag outside (1500, 1500) → Line endpoint clamped
 - [ ] Click outside (1500, 1500) → No line created
 
 **1.6 Freedraw Tool**
+
 - [ ] Draw stroke entirely inside → Stroke preserved
 - [ ] Draw stroke starting inside, exit boundary → Stroke cleared on release
 - [ ] Draw rapid scribble at boundary edge → Cleared if any point exits
@@ -650,21 +658,25 @@ describe("Performance: Drawing 1000 Elements", () => {
 ### Scenario 2: Edge Cases (30 min)
 
 **2.1 Zoom Levels**
+
 - [ ] Zoom 0.1x: Draw rectangle inside boundary → Works correctly
 - [ ] Zoom 5x: Draw freedraw at boundary edge → Clamping accurate
 - [ ] Zoom 10x: Draw arrow inside → No visual glitches
 
 **2.2 Canvas Panning**
+
 - [ ] Pan canvas (scrollX: 500, scrollY: 500)
 - [ ] Draw rectangle inside visible boundary → Created at correct coords
 - [ ] Verify clamping accounts for scroll offset
 
 **2.3 Boundary Edge Precision**
+
 - [ ] Draw rectangle with corner exactly on boundary (1024, 1024) → Preserved
 - [ ] Draw rectangle with corner 1px outside (1025, 1025) → Cleared
 - [ ] Draw freedraw stroke that touches but doesn't cross boundary → Preserved
 
 **2.4 Rapid Interaction**
+
 - [ ] Rapid click-drag-release 10 times inside boundary → All elements created
 - [ ] Rapid click-drag-release 10 times crossing boundary → All elements cleared
 - [ ] Verify no memory leaks (check Chrome DevTools Memory)
@@ -672,6 +684,7 @@ describe("Performance: Drawing 1000 Elements", () => {
 ### Scenario 3: Performance Validation (15 min)
 
 **3.1 Frame Rate Monitoring**
+
 1. Open Chrome DevTools → Performance tab
 2. Click "Record"
 3. Draw 50 freedraw strokes inside boundary
@@ -679,11 +692,13 @@ describe("Performance: Drawing 1000 Elements", () => {
 5. Stop recording
 
 **Success Criteria:**
+
 - [ ] No frames longer than 16.6ms (60fps)
 - [ ] Average frame time <10ms
 - [ ] No forced reflows/layouts during drawing
 
 **3.2 Memory Profiling**
+
 1. Open Chrome DevTools → Memory tab
 2. Take heap snapshot (baseline)
 3. Draw 100 elements, half cleared
@@ -691,12 +706,11 @@ describe("Performance: Drawing 1000 Elements", () => {
 5. Compare snapshots
 
 **Success Criteria:**
+
 - [ ] No memory leaks (detached DOM nodes)
 - [ ] Heap growth proportional to visible elements only
 - [ ] Cleared elements garbage collected
 
 ---
 
-**Total Test Cases:** 150+ (50 unit, 80 integration, 20 performance)
-**Estimated Test Execution Time:** 45 minutes (automated) + 75 minutes (manual)
-**Code Coverage Target:** >80% for new code
+**Total Test Cases:** 150+ (50 unit, 80 integration, 20 performance) **Estimated Test Execution Time:** 45 minutes (automated) + 75 minutes (manual) **Code Coverage Target:** >80% for new code

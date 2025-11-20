@@ -1,14 +1,13 @@
 # Test Report: Restricted Drawing Area Phase 1
 
-**Date:** 2025-11-20
-**Tested by:** QA Agent
-**Build Status:** ❌ FAILED
+**Date:** 2025-11-20 **Tested by:** QA Agent **Build Status:** ❌ FAILED
 
 ---
 
 ## Executive Summary
 
 Phase 1 implementation has **10 critical type errors** preventing compilation. All errors relate to:
+
 1. Missing `restrictedArea` in `StaticCanvasAppState` type definition
 2. Incorrect Point type usage (object vs tuple notation)
 3. Missing test helper import path
@@ -19,9 +18,7 @@ Phase 1 implementation has **10 critical type errors** preventing compilation. A
 
 ## 1. Type Check Results
 
-**Command:** `yarn test:typecheck`
-**Status:** ❌ FAILED (Exit Code 2)
-**Errors Found:** 10
+**Command:** `yarn test:typecheck` **Status:** ❌ FAILED (Exit Code 2) **Errors Found:** 10
 
 ### Error Breakdown
 
@@ -40,15 +37,11 @@ Line 361: error TS2339: Property 'restrictedArea' does not exist on type 'Readon
 Line 364: error TS2339: Property 'restrictedArea' does not exist on type 'Readonly<_CommonCanvasAppState & { shouldCacheIgnoreZoom: boolean; ... }>'
 ```
 
-**Root Cause:**
-`restrictedArea` was added to `AppState` in `types.ts` (line 304-318) and to storage config in `appState.ts` (line 235), but NOT added to `StaticCanvasAppState` type definition.
+**Root Cause:** `restrictedArea` was added to `AppState` in `types.ts` (line 304-318) and to storage config in `appState.ts` (line 235), but NOT added to `StaticCanvasAppState` type definition.
 
-**Location to Fix:**
-File: `/home/onceup/Documents/js/pet-projects/excalidraw/packages/excalidraw/types.ts`
-Line: 196-211 (StaticCanvasAppState type definition)
+**Location to Fix:** File: `/home/onceup/Documents/js/pet-projects/excalidraw/packages/excalidraw/types.ts` Line: 196-211 (StaticCanvasAppState type definition)
 
-**Required Change:**
-Add `restrictedArea: AppState["restrictedArea"];` to StaticCanvasAppState (after line 205, alongside frameRendering)
+**Required Change:** Add `restrictedArea: AppState["restrictedArea"];` to StaticCanvasAppState (after line 205, alongside frameRendering)
 
 ---
 
@@ -60,32 +53,31 @@ Add `restrictedArea: AppState["restrictedArea"];` to StaticCanvasAppState (after
 Line 1: error TS2305: Module '"../types"' has no exported member 'Point'.
 ```
 
-**Root Cause:**
-Code imports `Point` from `../types`, but Excalidraw uses `LocalPoint` from `@excalidraw/math`.
+**Root Cause:** Code imports `Point` from `../types`, but Excalidraw uses `LocalPoint` from `@excalidraw/math`.
 
 **Current Code (WRONG):**
+
 ```typescript
 import type { Point } from "../types";
 ```
 
 **Expected Code:**
+
 ```typescript
 import type { LocalPoint } from "@excalidraw/math";
 ```
 
-**Additional Issue:**
-LocalPoint is a tuple type `[x: number, y: number]`, but code uses object notation `{ x: number, y: number }`. All point references need updating:
+**Additional Issue:** LocalPoint is a tuple type `[x: number, y: number]`, but code uses object notation `{ x: number, y: number }`. All point references need updating:
 
 ```typescript
 // WRONG (current):
-point.x >= area.x
+point.x >= area.x;
 
 // CORRECT (should be):
-point[0] >= area.x  // or use helper functions from @excalidraw/math
+point[0] >= area.x; // or use helper functions from @excalidraw/math
 ```
 
-**Recommended Fix:**
-Use object notation `{ x: number; y: number }` throughout and define locally, OR use LocalPoint tuple syntax with array notation.
+**Recommended Fix:** Use object notation `{ x: number; y: number }` throughout and define locally, OR use LocalPoint tuple syntax with array notation.
 
 ---
 
@@ -97,15 +89,16 @@ Use object notation `{ x: number; y: number }` throughout and define locally, OR
 Line 9: error TS2307: Cannot find module './helpers/api' or its corresponding type declarations.
 ```
 
-**Root Cause:**
-Test imports from `./helpers/api` but actual path is `../tests/helpers/api.ts`
+**Root Cause:** Test imports from `./helpers/api` but actual path is `../tests/helpers/api.ts`
 
 **Current Code (WRONG):**
+
 ```typescript
 import { API } from "./helpers/api";
 ```
 
 **Expected Code:**
+
 ```typescript
 import { API } from "../tests/helpers/api";
 ```
@@ -114,9 +107,7 @@ import { API } from "../tests/helpers/api";
 
 ## 2. Unit Test Results
 
-**Command:** `yarn test:app packages/excalidraw/__tests__/restrictedArea.test.ts`
-**Status:** ❌ FAILED - No tests executed
-**Error:** Module resolution failure
+**Command:** `yarn test:app packages/excalidraw/__tests__/restrictedArea.test.ts` **Status:** ❌ FAILED - No tests executed **Error:** Module resolution failure
 
 ```
 Error: Failed to resolve import "./helpers/api" from "packages/excalidraw/__tests__/restrictedArea.test.ts".
@@ -124,6 +115,7 @@ Does the file exist?
 ```
 
 **Test Suite:** `restrictedArea.test.ts`
+
 - Expected: 13 test cases across 4 describe blocks
 - Actual: 0 tests run (compilation failed)
 
@@ -137,6 +129,7 @@ Does the file exist?
 2. **API helper wrong path** - Should be `../tests/helpers/api`
 
 ### Verified Correct Paths:
+
 - ✅ `@excalidraw/element` - getElementBounds import works
 - ✅ `@excalidraw/element/types` - ElementsMap, ExcalidrawElement imports work
 - ✅ AppState type import from `../types` works
@@ -158,6 +151,7 @@ Build cannot proceed due to TypeScript compilation errors.
 **Issue 1: StaticCanvasAppState Incompleteness**
 
 The `restrictedArea` property exists in:
+
 - ✅ `AppState` type (types.ts:304-318)
 - ✅ Default app state (appState.ts:105)
 - ✅ Storage config (appState.ts:235)
@@ -168,16 +162,19 @@ This creates type inconsistency when staticScene.ts renderer accesses appState.r
 **Issue 2: Point Type Mismatch**
 
 Excalidraw math system uses branded tuple types:
+
 ```typescript
 type LocalPoint = [x: number, y: number] & { _brand: "excalimath__localpoint" };
 ```
 
 But restrictedArea.ts code assumes object notation:
+
 ```typescript
-point.x >= area.x  // ❌ Fails - tuples don't have .x property
+point.x >= area.x; // ❌ Fails - tuples don't have .x property
 ```
 
 **Options:**
+
 1. Define custom `Point = { x: number; y: number }` locally
 2. Use `LocalPoint` with tuple syntax: `point[0] >= area.x`
 3. Use `pointFrom()` helper from `@excalidraw/math`
@@ -189,6 +186,7 @@ point.x >= area.x  // ❌ Fails - tuples don't have .x property
 **Status:** Cannot analyze (tests didn't run)
 
 **Expected Test Coverage:**
+
 - ✅ Point boundary checking (6 tests)
 - ✅ Element intersection (4 tests)
 - ✅ Bounds conversion (2 tests)
@@ -203,11 +201,13 @@ point.x >= area.x  // ❌ Fails - tuples don't have .x property
 ### Critical (Blocks Compilation)
 
 1. **Add restrictedArea to StaticCanvasAppState**
+
    - File: `packages/excalidraw/types.ts`
    - Line: ~206 (after frameRendering)
    - Code: `restrictedArea: AppState["restrictedArea"];`
 
 2. **Fix Point type in restrictedArea.ts**
+
    - File: `packages/excalidraw/utils/restrictedArea.ts`
    - Line: 1
    - Options:
@@ -230,7 +230,7 @@ point.x >= area.x  // ❌ Fails - tuples don't have .x property
 ## 8. Files Requiring Changes
 
 | File | Lines | Issue | Priority |
-|------|-------|-------|----------|
+| --- | --- | --- | --- |
 | `packages/excalidraw/types.ts` | 206 | Add restrictedArea to StaticCanvasAppState | CRITICAL |
 | `packages/excalidraw/utils/restrictedArea.ts` | 1-21 | Fix Point type usage | CRITICAL |
 | `packages/excalidraw/__tests__/restrictedArea.test.ts` | 9 | Fix API import path | CRITICAL |
@@ -250,6 +250,7 @@ point.x >= area.x  // ❌ Fails - tuples don't have .x property
 ### Post-Fix Validation
 
 Once fixes applied:
+
 - ✅ All type checks pass
 - ✅ All 13 unit tests pass
 - ✅ Build succeeds
@@ -262,6 +263,7 @@ Once fixes applied:
 **Current Status:** High Risk - Cannot compile
 
 **Impact:**
+
 - Blocks all downstream testing
 - Blocks integration testing
 - Blocks manual QA
@@ -303,7 +305,7 @@ packages/excalidraw/utils/restrictedArea.ts(1,15): error TS2305: Module '"../typ
 
 ```typescript
 // packages/excalidraw/utils/restrictedArea.ts
-type Point = { x: number; y: number };  // Local definition
+type Point = { x: number; y: number }; // Local definition
 import type { AppState } from "../types";
 import type { ExcalidrawElement } from "@excalidraw/element/types";
 // ... rest of code unchanged

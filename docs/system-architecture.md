@@ -59,6 +59,7 @@ Excalidraw follows a **layered monorepo architecture** with clear separation of 
 **Purpose:** Provide pure, framework-agnostic utilities and mathematical primitives.
 
 **Characteristics:**
+
 - Zero dependencies on other Excalidraw packages
 - No React dependencies
 - Pure functions only
@@ -67,6 +68,7 @@ Excalidraw follows a **layered monorepo architecture** with clear separation of 
 **Key Modules:**
 
 **@excalidraw/common:**
+
 - Constants (dimensions, limits, defaults)
 - Color utilities and palettes
 - Keyboard event handling
@@ -76,6 +78,7 @@ Excalidraw follows a **layered monorepo architecture** with clear separation of 
 - Coordinate transformations
 
 **@excalidraw/math:**
+
 - 2D geometry (points, vectors, angles)
 - Shape operations (rectangles, ellipses, polygons)
 - Collision detection primitives
@@ -88,6 +91,7 @@ Excalidraw follows a **layered monorepo architecture** with clear separation of 
 **Purpose:** Core business logic for element operations, independent of rendering.
 
 **Characteristics:**
+
 - Depends on math and common layers
 - No React or rendering code
 - Immutable element operations
@@ -96,6 +100,7 @@ Excalidraw follows a **layered monorepo architecture** with clear separation of 
 **Key Concepts:**
 
 **Element Model:**
+
 ```typescript
 type ExcalidrawElement = {
   id: string;
@@ -119,6 +124,7 @@ type ExcalidrawElement = {
 ```
 
 **Core Operations:**
+
 - `mutateElement()` - Immutable element updates
 - `newElement()` - Element creation with defaults
 - `bumpVersion()` - Version increment for collaboration
@@ -128,8 +134,8 @@ type ExcalidrawElement = {
 - Group and frame operations
 - Z-index management
 
-**Scene Class:**
-The `Scene` class manages the element collection:
+**Scene Class:** The `Scene` class manages the element collection:
+
 ```typescript
 class Scene {
   private elements: readonly OrderedExcalidrawElement[];
@@ -144,8 +150,8 @@ class Scene {
 }
 ```
 
-**Fractional Indexing:**
-Elements use fractional indexes for stable ordering in collaborative scenarios:
+**Fractional Indexing:** Elements use fractional indexes for stable ordering in collaborative scenarios:
+
 ```typescript
 type FractionalIndex = string & { _brand: "fractionalIndex" };
 
@@ -158,6 +164,7 @@ type FractionalIndex = string & { _brand: "fractionalIndex" };
 **Purpose:** Higher-level utilities for file operations, export, and specialized functionality.
 
 **Key Functions:**
+
 - `exportToCanvas()` - Render to offscreen canvas
 - `exportToBlob()` - Export as PNG/SVG blob
 - `exportToSvg()` - Generate SVG representation
@@ -186,6 +193,7 @@ const viewModeEnabledAtom = atom<boolean>(false);
 ```
 
 **AppState Structure:**
+
 ```typescript
 type AppState = {
   // Selection
@@ -310,7 +318,7 @@ Excalidraw uses multiple canvas layers for performance:
 function renderElement(
   element: ExcalidrawElement,
   rc: RoughCanvas,
-  context: CanvasRenderingContext2D
+  context: CanvasRenderingContext2D,
 ) {
   const generator = rough.generator();
 
@@ -327,8 +335,8 @@ function renderElement(
           fill: element.backgroundColor,
           fillStyle: element.fillStyle,
           strokeWidth: element.strokeWidth,
-          seed: element.seed  // Deterministic randomness
-        }
+          seed: element.seed, // Deterministic randomness
+        },
       );
       rc.draw(shape);
       break;
@@ -348,12 +356,12 @@ type Action = {
   label: string;
   keywords?: string[];
   icon?: JSX.Element;
-  viewMode: boolean;  // Available in view mode?
+  viewMode: boolean; // Available in view mode?
   perform: (
     elements: readonly ExcalidrawElement[],
     appState: AppState,
     formData: any,
-    app: App
+    app: App,
   ) => {
     elements?: ExcalidrawElement[];
     appState?: Partial<AppState>;
@@ -373,10 +381,10 @@ export const actionDeleteSelected: Action = {
   viewMode: false,
   perform: (elements, appState) => {
     return {
-      elements: elements.map(el =>
+      elements: elements.map((el) =>
         appState.selectedElementIds.includes(el.id)
           ? { ...el, isDeleted: true }
-          : el
+          : el,
       ),
       appState: {
         selectedElementIds: [],
@@ -393,6 +401,7 @@ export const actionDeleteSelected: Action = {
 **Purpose:** Full-featured web application with collaboration and cloud features.
 
 **Additional Features:**
+
 - Real-time collaboration via Firebase
 - End-to-end encryption
 - Shareable links
@@ -419,14 +428,15 @@ export const actionDeleteSelected: Action = {
 **Reconciliation Strategy:**
 
 When receiving remote changes:
+
 ```typescript
 function reconcileElements(
   localElements: ExcalidrawElement[],
   remoteElements: RemoteExcalidrawElement[],
 ): ExcalidrawElement[] {
   // 1. Create lookup maps
-  const localMap = new Map(localElements.map(el => [el.id, el]));
-  const remoteMap = new Map(remoteElements.map(el => [el.id, el]));
+  const localMap = new Map(localElements.map((el) => [el.id, el]));
+  const remoteMap = new Map(remoteElements.map((el) => [el.id, el]));
 
   // 2. Merge strategy
   const reconciled = [];
@@ -444,9 +454,7 @@ function reconcileElements(
       } else if (remoteEl.version === localEl.version) {
         // Use versionNonce as tiebreaker
         reconciled.push(
-          remoteEl.versionNonce > localEl.versionNonce
-            ? remoteEl
-            : localEl
+          remoteEl.versionNonce > localEl.versionNonce ? remoteEl : localEl,
         );
       } else {
         reconciled.push(localEl);
@@ -533,7 +541,7 @@ const updatedElement = {
   ...element,
   x: 100,
   y: 200,
-  version: element.version + 1
+  version: element.version + 1,
 };
 
 // Best - Using helper
@@ -551,9 +559,9 @@ type FileId = string & { _brand: "FileId" };
 type GroupId = string & { _brand: "GroupId" };
 
 // Compile-time error if types don't match
-function getFile(id: FileId) { }
+function getFile(id: FileId) {}
 const groupId: GroupId = "123";
-getFile(groupId);  // ❌ Type error
+getFile(groupId); // ❌ Type error
 ```
 
 ### 2. Discriminated Unions
@@ -581,9 +589,9 @@ Each element tracks versions for conflict resolution:
 
 ```typescript
 type ExcalidrawElement = {
-  version: number;        // Incremented on each change
-  versionNonce: number;   // Random value regenerated on change
-  updated: number;        // Timestamp in milliseconds
+  version: number; // Incremented on each change
+  versionNonce: number; // Random value regenerated on change
+  updated: number; // Timestamp in milliseconds
 };
 
 // Update increments version
@@ -592,7 +600,7 @@ function updateElement(element) {
     ...element,
     version: element.version + 1,
     versionNonce: randomInteger(),
-    updated: Date.now()
+    updated: Date.now(),
   };
 }
 ```
@@ -607,7 +615,7 @@ class Scene {
 
   addCallback(cb: () => void): () => void {
     this.callbacks.add(cb);
-    return () => this.callbacks.delete(cb);  // Cleanup
+    return () => this.callbacks.delete(cb); // Cleanup
   }
 
   private triggerUpdate() {
@@ -620,7 +628,7 @@ class Scene {
 // Usage in React
 useEffect(() => {
   const unsubscribe = scene.addCallback(() => {
-    forceUpdate();  // Trigger re-render
+    forceUpdate(); // Trigger re-render
   });
   return unsubscribe;
 }, [scene]);
@@ -632,17 +640,12 @@ Actions encapsulate operations:
 
 ```typescript
 // Actions are reusable, testable, and reversible (via history)
-const result = actionDeleteSelected.perform(
-  elements,
-  appState,
-  null,
-  app
-);
+const result = actionDeleteSelected.perform(elements, appState, null, app);
 
 // Result can be stored in history for undo/redo
 history.push({
   elements: previousElements,
-  appState: previousAppState
+  appState: previousAppState,
 });
 ```
 
@@ -657,12 +660,15 @@ function newElement<T extends ElementType>(
   y: number,
   width: number,
   height: number,
-  opts?: Partial<ExcalidrawElement>
+  opts?: Partial<ExcalidrawElement>,
 ): Element<T> {
   return {
     id: nanoid(),
     type,
-    x, y, width, height,
+    x,
+    y,
+    width,
+    height,
     angle: 0,
     strokeColor: DEFAULT_STROKE_COLOR,
     backgroundColor: "transparent",
@@ -676,7 +682,7 @@ function newElement<T extends ElementType>(
     versionNonce: randomInteger(),
     isDeleted: false,
     // ... more defaults
-    ...opts  // Override with provided options
+    ...opts, // Override with provided options
   };
 }
 ```
@@ -686,6 +692,7 @@ function newElement<T extends ElementType>(
 ### 1. Canvas Rendering Optimizations
 
 **Dirty Rectangle Tracking:**
+
 ```typescript
 // Only redraw changed regions
 const dirtyRect = getBoundingBox(changedElements);
@@ -693,10 +700,12 @@ context.clearRect(dirtyRect.x, dirtyRect.y, dirtyRect.width, dirtyRect.height);
 ```
 
 **Layer Separation:**
+
 - Static canvas: Rarely changing elements
 - Interactive canvas: Selection, handles, gestures
 
 **Element Caching:**
+
 ```typescript
 // Cache generated roughjs shapes
 const shapeCache = new Map<ElementId, Drawable>();
@@ -715,6 +724,7 @@ function getOrCreateShape(element: ExcalidrawElement) {
 ### 2. React Optimization
 
 **Memoization:**
+
 ```typescript
 const ExpensiveComponent = React.memo(Component, arePropsEqual);
 
@@ -728,23 +738,26 @@ const memoizedCallback = useCallback(() => {
 ```
 
 **Stable References:**
+
 ```typescript
 // Avoid creating new objects/arrays in render
 const EMPTY_ARRAY: readonly ExcalidrawElement[] = [];
 
 function Component({ elements }: Props) {
-  const els = elements || EMPTY_ARRAY;  // Stable reference
+  const els = elements || EMPTY_ARRAY; // Stable reference
 }
 ```
 
 ### 3. State Management Optimization
 
 **Jotai Atoms:**
+
 - Granular updates - only affected components re-render
 - Derived atoms for computed values
 - Lazy evaluation
 
 **Selection Caching:**
+
 ```typescript
 // Scene caches selected elements based on selectedElementIds
 private selectedElementsCache: {
@@ -847,7 +860,7 @@ Strict CSP headers prevent inline scripts and unauthorized resource loading.
     canvasActions: {
       loadScene: false,
       export: { saveFileToDisk: false },
-    }
+    },
   }}
   renderTopRightUI={() => <CustomToolbar />}
   validateEmbeddable={(url) => customValidation(url)}
@@ -859,7 +872,7 @@ Strict CSP headers prevent inline scripts and unauthorized resource loading.
 ```typescript
 const [excalidrawAPI, setExcalidrawAPI] = useState<ExcalidrawImperativeAPI>();
 
-<Excalidraw excalidrawAPI={(api) => setExcalidrawAPI(api)} />
+<Excalidraw excalidrawAPI={(api) => setExcalidrawAPI(api)} />;
 
 // Later
 excalidrawAPI.updateScene({ elements: newElements });
@@ -896,39 +909,27 @@ Planned plugin architecture for extending functionality.
 
 ### 1. Monorepo Structure
 
-**Decision:** Use Yarn workspaces monorepo
-**Rationale:** Shared code, coordinated versioning, easier refactoring
-**Trade-off:** Slightly more complex setup vs. clearer dependencies
+**Decision:** Use Yarn workspaces monorepo **Rationale:** Shared code, coordinated versioning, easier refactoring **Trade-off:** Slightly more complex setup vs. clearer dependencies
 
 ### 2. Canvas-Based Rendering
 
-**Decision:** Use HTML5 Canvas instead of SVG
-**Rationale:** Better performance for large scenes, fine control over rendering
-**Trade-off:** More complex implementation vs. superior performance
+**Decision:** Use HTML5 Canvas instead of SVG **Rationale:** Better performance for large scenes, fine control over rendering **Trade-off:** More complex implementation vs. superior performance
 
 ### 3. Jotai for State Management
 
-**Decision:** Use Jotai instead of Redux/Context
-**Rationale:** Atomic updates, better performance, less boilerplate
-**Trade-off:** Smaller ecosystem vs. better developer experience
+**Decision:** Use Jotai instead of Redux/Context **Rationale:** Atomic updates, better performance, less boilerplate **Trade-off:** Smaller ecosystem vs. better developer experience
 
 ### 4. Immutable Data Patterns
 
-**Decision:** Treat all data as immutable
-**Rationale:** Predictable state updates, easier collaboration reconciliation
-**Trade-off:** More object creation vs. easier debugging and time-travel
+**Decision:** Treat all data as immutable **Rationale:** Predictable state updates, easier collaboration reconciliation **Trade-off:** More object creation vs. easier debugging and time-travel
 
 ### 5. TypeScript Strict Mode
 
-**Decision:** Enable strict TypeScript
-**Rationale:** Catch errors at compile time, better IDE support
-**Trade-off:** More type annotations vs. fewer runtime errors
+**Decision:** Enable strict TypeScript **Rationale:** Catch errors at compile time, better IDE support **Trade-off:** More type annotations vs. fewer runtime errors
 
 ### 6. roughjs for Hand-Drawn Aesthetic
 
-**Decision:** Use roughjs library
-**Rationale:** Unique visual identity, differentiates from competitors
-**Trade-off:** Additional bundle size vs. distinctive style
+**Decision:** Use roughjs library **Rationale:** Unique visual identity, differentiates from competitors **Trade-off:** Additional bundle size vs. distinctive style
 
 ## Future Architecture Considerations
 
@@ -942,6 +943,7 @@ Planned plugin architecture for extending functionality.
 ## Summary
 
 Excalidraw's architecture prioritizes:
+
 - **Type safety** through TypeScript
 - **Performance** through canvas rendering and optimization
 - **Maintainability** through clean layering and immutability

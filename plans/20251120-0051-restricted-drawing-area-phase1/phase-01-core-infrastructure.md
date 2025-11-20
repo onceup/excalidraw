@@ -8,13 +8,10 @@
 
 ## Overview
 
-**Date:** 2025-11-20
-**Priority:** High
-**Status:** Code Review Complete - Approved with Minor Suggestions
-**Estimated Duration:** 2-3 days
-**Actual Duration:** ~2 days
+**Date:** 2025-11-20 **Priority:** High **Status:** Code Review Complete - Approved with Minor Suggestions **Estimated Duration:** 2-3 days **Actual Duration:** ~2 days
 
 Implement foundational infrastructure for restricted drawing area feature:
+
 - Type definitions and AppState integration
 - Production-ready props API
 - Visual boundary rendering (border + background)
@@ -70,7 +67,7 @@ export type RestrictedAreaConfig = {
     backgroundColor: string | null;
     opacity: number;
   };
-  enforcement: "soft";  // Phase 1: only soft mode
+  enforcement: "soft"; // Phase 1: only soft mode
 };
 
 // Add to AppState
@@ -99,18 +96,19 @@ const DEFAULT_RESTRICTED_AREA: RestrictedAreaConfig = {
   height: 1024,
   showBoundary: true,
   boundaryStyle: {
-    strokeColor: "#6965db",  // Excalidraw brand color
+    strokeColor: "#6965db", // Excalidraw brand color
     strokeWidth: 2,
-    backgroundColor: null,    // Transparent by default
-    opacity: 0.1
+    backgroundColor: null, // Transparent by default
+    opacity: 0.1,
   },
-  enforcement: "soft"
+  enforcement: "soft",
 };
 ```
 
 ### Rendering Strategy
 
 **Boundary Visualization (Static Canvas):**
+
 ```typescript
 // In staticScene.ts after grid rendering (line ~258)
 
@@ -120,6 +118,7 @@ if (appState.restrictedArea?.enabled && appState.restrictedArea.showBoundary) {
 ```
 
 **Per-Element Clipping (Static Canvas):**
+
 ```typescript
 // In element rendering loop (line ~300-317)
 
@@ -142,7 +141,7 @@ context.restore();
 
 export const isPointInRestrictedArea = (
   point: Point,
-  area: RestrictedAreaConfig
+  area: RestrictedAreaConfig,
 ): boolean => {
   return (
     point.x >= area.x &&
@@ -155,7 +154,7 @@ export const isPointInRestrictedArea = (
 export const isElementInRestrictedArea = (
   element: ExcalidrawElement,
   area: RestrictedAreaConfig,
-  elementsMap: ElementsMap
+  elementsMap: ElementsMap,
 ): boolean => {
   const bounds = getElementBounds(element, elementsMap);
   const [minX, minY, maxX, maxY] = bounds;
@@ -169,9 +168,7 @@ export const isElementInRestrictedArea = (
   );
 };
 
-export const getRestrictedAreaBounds = (
-  area: RestrictedAreaConfig
-): Bounds => {
+export const getRestrictedAreaBounds = (area: RestrictedAreaConfig): Bounds => {
   return [area.x, area.y, area.x + area.width, area.y + area.height];
 };
 ```
@@ -181,21 +178,26 @@ export const getRestrictedAreaBounds = (
 ### Files to Modify
 
 1. **packages/excalidraw/types.ts** (lines ~50-150)
+
    - Add `RestrictedAreaConfig` type
    - Add to `AppState` interface
    - Add to `ExcalidrawProps` interface
 
 2. **packages/excalidraw/appState.ts** (lines ~20-100)
+
    - Add default `restrictedArea` config
    - Add to `getDefaultAppState()`
 
 3. **packages/excalidraw/index.tsx** (lines ~400-500)
+
    - Add props forwarding to App component
 
 4. **packages/excalidraw/components/App.tsx** (lines ~1000-1200)
+
    - Merge props into AppState (like UIOptions pattern)
 
 5. **packages/excalidraw/renderer/staticScene.ts**
+
    - Line ~258: Add boundary rendering function call
    - Line ~300-317: Add clipping logic to element loop
    - Add helper functions at bottom of file
@@ -206,13 +208,15 @@ export const getRestrictedAreaBounds = (
 ### Files to Create
 
 1. **packages/excalidraw/utils/restrictedArea.ts** (NEW)
+
    - Boundary checking utilities
    - Helper functions for geometry
 
-2. **packages/excalidraw/__tests__/restrictedArea.test.ts** (NEW)
+2. **packages/excalidraw/**tests**/restrictedArea.test.ts** (NEW)
+
    - Unit tests for utilities
 
-3. **packages/excalidraw/__tests__/restrictedAreaRendering.test.tsx** (NEW)
+3. **packages/excalidraw/**tests**/restrictedAreaRendering.test.tsx** (NEW)
    - Integration tests for rendering
 
 ## Implementation Steps
@@ -283,9 +287,12 @@ export const DEFAULT_RESTRICTED_AREA: RestrictedAreaConfig = {
 };
 
 // In getDefaultAppState() function, add:
-export const getDefaultAppState = (): Omit<AppState, "offsetTop" | "offsetLeft"> => ({
+export const getDefaultAppState = (): Omit<
+  AppState,
+  "offsetTop" | "offsetLeft"
+> => ({
   // ... existing properties ...
-  restrictedArea: null,  // Disabled by default
+  restrictedArea: null, // Disabled by default
 });
 ```
 
@@ -379,9 +386,7 @@ export const isElementInRestrictedArea = (
 /**
  * Convert RestrictedAreaConfig to Bounds tuple
  */
-export const getRestrictedAreaBounds = (
-  area: RestrictedAreaConfig,
-): Bounds => {
+export const getRestrictedAreaBounds = (area: RestrictedAreaConfig): Bounds => {
   return [area.x, area.y, area.x + area.width, area.y + area.height] as const;
 };
 
@@ -441,10 +446,10 @@ const renderRestrictedAreaBoundary = (
 
   // Render border
   context.strokeStyle = boundaryStyle.strokeColor;
-  context.lineWidth = boundaryStyle.strokeWidth / zoom.value;  // Zoom-aware
-  context.setLineDash([10 / zoom.value, 5 / zoom.value]);  // Dashed line
+  context.lineWidth = boundaryStyle.strokeWidth / zoom.value; // Zoom-aware
+  context.setLineDash([10 / zoom.value, 5 / zoom.value]); // Dashed line
   context.strokeRect(scaledX, scaledY, width, height);
-  context.setLineDash([]);  // Reset
+  context.setLineDash([]); // Reset
 
   context.restore();
 };
@@ -465,7 +470,10 @@ export const renderStaticScene = (
   }
 
   // NEW: Render restricted area boundary
-  if (appState.restrictedArea?.enabled && appState.restrictedArea.showBoundary) {
+  if (
+    appState.restrictedArea?.enabled &&
+    appState.restrictedArea.showBoundary
+  ) {
     renderRestrictedAreaBoundary(context, appState.restrictedArea, appState);
   }
 
@@ -510,18 +518,22 @@ visibleElements.forEach((element) => {
   if (
     appState.restrictedArea?.enabled &&
     appState.restrictedArea.enforcement === "soft" &&
-    element.frameId === null  // Don't double-clip framed elements
+    element.frameId === null // Don't double-clip framed elements
   ) {
     applyRestrictedAreaClip(context, appState.restrictedArea, appState);
   }
 
   // Existing frame clipping logic
-  if (element.frameId && appState.frameRendering.enabled && appState.frameRendering.clip) {
+  if (
+    element.frameId &&
+    appState.frameRendering.enabled &&
+    appState.frameRendering.clip
+  ) {
     // ... existing frameClip logic
   }
 
   // Render element
-  renderElement(element, elementsMap, /* ... */);
+  renderElement(element, elementsMap /* ... */);
 
   context.restore();
 });
@@ -578,14 +590,22 @@ describe("restrictedArea utilities", () => {
     });
 
     it("should return false for point outside area", () => {
-      expect(isPointInRestrictedArea({ x: 1500, y: 500 }, testArea)).toBe(false);
-      expect(isPointInRestrictedArea({ x: 500, y: 1500 }, testArea)).toBe(false);
-      expect(isPointInRestrictedArea({ x: -100, y: 500 }, testArea)).toBe(false);
+      expect(isPointInRestrictedArea({ x: 1500, y: 500 }, testArea)).toBe(
+        false,
+      );
+      expect(isPointInRestrictedArea({ x: 500, y: 1500 }, testArea)).toBe(
+        false,
+      );
+      expect(isPointInRestrictedArea({ x: -100, y: 500 }, testArea)).toBe(
+        false,
+      );
     });
 
     it("should return true for point on boundary", () => {
       expect(isPointInRestrictedArea({ x: 0, y: 0 }, testArea)).toBe(true);
-      expect(isPointInRestrictedArea({ x: 1024, y: 1024 }, testArea)).toBe(true);
+      expect(isPointInRestrictedArea({ x: 1024, y: 1024 }, testArea)).toBe(
+        true,
+      );
     });
   });
 
@@ -652,8 +672,16 @@ describe("restrictedArea utilities", () => {
         height: 300,
       });
 
-      expect(isElementCompletelyInRestrictedArea(insideRect, testArea, new Map())).toBe(true);
-      expect(isElementCompletelyInRestrictedArea(overlappingRect, testArea, new Map())).toBe(false);
+      expect(
+        isElementCompletelyInRestrictedArea(insideRect, testArea, new Map()),
+      ).toBe(true);
+      expect(
+        isElementCompletelyInRestrictedArea(
+          overlappingRect,
+          testArea,
+          new Map(),
+        ),
+      ).toBe(false);
     });
   });
 });
@@ -689,7 +717,7 @@ describe("restricted area rendering", () => {
 
   it("should render boundary when enabled", async () => {
     const { container } = render(
-      <Excalidraw restrictedArea={restrictedArea} />
+      <Excalidraw restrictedArea={restrictedArea} />,
     );
 
     const canvas = container.querySelector("canvas.static");
@@ -702,7 +730,7 @@ describe("restricted area rendering", () => {
     const { container } = render(
       <Excalidraw
         restrictedArea={{ ...restrictedArea, showBoundary: false }}
-      />
+      />,
     );
 
     const canvas = container.querySelector("canvas.static");
@@ -712,9 +740,7 @@ describe("restricted area rendering", () => {
   });
 
   it("should clip elements outside restricted area", async () => {
-    const h = await render(
-      <Excalidraw restrictedArea={restrictedArea} />,
-    );
+    const h = await render(<Excalidraw restrictedArea={restrictedArea} />);
 
     // Create element outside restricted area
     const rect = API.createElement({
@@ -779,15 +805,18 @@ Fix any type errors that arise.
 ## Risk Assessment
 
 ### Low Risk
+
 - **Pattern Reuse:** Following proven `frameClip` pattern
 - **Type Safety:** TypeScript catches errors at compile time
 - **Opt-In:** Feature disabled by default, no breaking changes
 
 ### Medium Risk
+
 - **Performance:** Canvas clipping has overhead (mitigated by save/restore pattern)
 - **Testing:** Integration tests may be flaky (mitigated by comprehensive unit tests)
 
 ### Mitigations
+
 1. Performance: Profile with 1000+ elements, optimize if needed
 2. Testing: Use deterministic rendering, avoid timing-dependent tests
 3. Compatibility: Extensive testing with existing features (frames, collaboration)

@@ -47,6 +47,7 @@ excalidraw/
 **Purpose:** Foundation layer providing shared utilities, constants, and types used across all packages.
 
 **Key Exports:**
+
 - `constants.ts` - Application-wide constants (dimensions, defaults, limits)
 - `colors.ts` - Color palette and color utilities
 - `utils.ts` - General utility functions (debounce, throttle, deep clone, etc.)
@@ -70,6 +71,7 @@ excalidraw/
 **Purpose:** Mathematical primitives and operations for 2D geometry, vectors, and spatial calculations.
 
 **Key Exports:**
+
 - `angle.ts` - Angle calculations and conversions
 - `curve.ts` - Bezier curves and path calculations
 - `ellipse.ts` - Ellipse geometry operations
@@ -87,6 +89,7 @@ excalidraw/
 **Location:** `packages/math/src/`
 
 **Use Cases:**
+
 - Element bounds calculations
 - Collision detection
 - Transform operations (rotate, scale, translate)
@@ -97,6 +100,7 @@ excalidraw/
 **Purpose:** Element data models, manipulation logic, and operations. The core domain logic for all drawable elements.
 
 **Key Exports:**
+
 - Element operations: `mutateElement`, `newElement`, `bumpVersion`
 - Selection: `getSelectedElements`, `isElementSelected`
 - Bounds: `getElementBounds`, `getCommonBounds`
@@ -118,6 +122,7 @@ excalidraw/
 **Location:** `packages/element/src/`
 
 **Element Types:**
+
 - Rectangle, Ellipse, Diamond
 - Arrow, Line (linear elements)
 - Free-draw paths
@@ -131,6 +136,7 @@ excalidraw/
 **Purpose:** Higher-level utility functions for export, import, and specialized operations.
 
 **Key Exports:**
+
 - `export.ts` - Export to PNG, SVG, clipboard
 - `withinBounds.ts` - Spatial query utilities
 - Font utilities (embedded in utils)
@@ -146,6 +152,7 @@ excalidraw/
 **Purpose:** Main React component library. The primary integration point for embedding Excalidraw.
 
 **Key Exports:**
+
 - `<Excalidraw />` - Main React component
 - `<Sidebar />`, `<Footer />`, `<MainMenu />` - UI components
 - `<WelcomeScreen />`, `<Button />` - Sub-components
@@ -156,6 +163,7 @@ excalidraw/
 - Constants: `FONT_FAMILY`, `THEME`, `MIME_TYPES`
 
 **Key Directories:**
+
 - `components/` - React components (Actions, App, ColorPicker, etc.)
 - `actions/` - User actions (drawing, selection, export, etc.)
 - `data/` - Data serialization, restore, blob handling
@@ -167,6 +175,7 @@ excalidraw/
 - `css/` - Styles (SCSS)
 
 **Dependencies:**
+
 - `@excalidraw/common`
 - `@excalidraw/element`
 - `@excalidraw/math`
@@ -183,6 +192,7 @@ excalidraw/
 **Purpose:** Full-featured web application hosted at excalidraw.com. Demonstrates the library's capabilities and adds collaboration features.
 
 **Key Files:**
+
 - `App.tsx` - Main application component (365KB, highly complex)
 - `index.tsx` - Entry point
 - `app-jotai.ts` - Jotai state management setup
@@ -193,6 +203,7 @@ excalidraw/
 - `vite.config.mts` - Vite build configuration
 
 **Additional Features (vs library):**
+
 - Real-time collaboration (WebRTC/Firebase)
 - End-to-end encryption
 - Shareable links
@@ -220,17 +231,20 @@ Vanilla JavaScript example using UMD bundle via script tag. Simplest integration
 ### Package Build (esbuild)
 
 **Scripts:**
+
 - `buildPackage.js` - Builds `@excalidraw/excalidraw` package
 - `buildBase.js` - Builds base packages (common, math, element)
 - `buildUtils.js` - Builds utils package
 
 **Process:**
+
 1. Clean dist directory
 2. Bundle with esbuild (dev + prod)
 3. Generate TypeScript definitions (`tsc`)
 4. Output ESM modules
 
 **Outputs:**
+
 - `dist/dev/index.js` - Development bundle
 - `dist/prod/index.js` - Production bundle (minified)
 - `dist/types/` - TypeScript definitions
@@ -240,6 +254,7 @@ Vanilla JavaScript example using UMD bundle via script tag. Simplest integration
 **Configuration:** `excalidraw-app/vite.config.mts`
 
 **Plugins:**
+
 - `@vitejs/plugin-react` - React Fast Refresh
 - `vite-plugin-svgr` - SVG as React components
 - `vite-plugin-pwa` - Progressive Web App
@@ -247,6 +262,7 @@ Vanilla JavaScript example using UMD bundle via script tag. Simplest integration
 - `vite-plugin-checker` - TypeScript checking
 
 **Environment Variables:**
+
 - `.env.development` - Development config
 - `.env.production` - Production config
 
@@ -257,6 +273,7 @@ Vanilla JavaScript example using UMD bundle via script tag. Simplest integration
 **File:** `vitest.config.mts`
 
 **Key Settings:**
+
 - Test environment: jsdom
 - Global test utilities
 - Coverage thresholds: 60% lines, 70% branches
@@ -264,12 +281,14 @@ Vanilla JavaScript example using UMD bundle via script tag. Simplest integration
 - Setup file: `setupTests.ts`
 
 **Coverage Thresholds:**
+
 - Lines: 60%
 - Branches: 70%
 - Functions: 63%
 - Statements: 60%
 
 **Test Commands:**
+
 - `yarn test` - Run tests in watch mode
 - `yarn test:update` - Update snapshots
 - `yarn test:coverage` - Generate coverage report
@@ -287,6 +306,7 @@ Vanilla JavaScript example using UMD bundle via script tag. Simplest integration
 ### Root `tsconfig.json`
 
 **Key Settings:**
+
 - Target: ESNext
 - Module: ESNext
 - Strict mode enabled
@@ -294,6 +314,7 @@ Vanilla JavaScript example using UMD bundle via script tag. Simplest integration
 - Path aliases for all packages
 
 **Path Aliases:**
+
 ```typescript
 {
   "@excalidraw/common": ["./packages/common/src/index.ts"],
@@ -316,12 +337,14 @@ Vanilla JavaScript example using UMD bundle via script tag. Simplest integration
 **Primary State Library:** Excalidraw uses Jotai for atomic state management.
 
 **Key State Atoms:**
+
 - Editor state (selection, tool, mode)
 - App state (theme, view settings)
 - Collaboration state (users, cursors)
 - UI state (dialogs, panels)
 
 **Files:**
+
 - `packages/excalidraw/editor-jotai.ts` - Editor store
 - `excalidraw-app/app-jotai.ts` - App store
 
@@ -332,6 +355,7 @@ Vanilla JavaScript example using UMD bundle via script tag. Simplest integration
 **Format:** JSON files per language
 
 **Supported Languages:** 50+ languages including:
+
 - en (English - default)
 - es (Spanish)
 - fr (French)
@@ -347,11 +371,13 @@ Vanilla JavaScript example using UMD bundle via script tag. Simplest integration
 ### For Library Consumers
 
 **npm Install:**
+
 ```bash
 npm install react react-dom @excalidraw/excalidraw
 ```
 
 **Import:**
+
 ```typescript
 import { Excalidraw } from "@excalidraw/excalidraw";
 import "@excalidraw/excalidraw/index.css";
@@ -362,6 +388,7 @@ import "@excalidraw/excalidraw/index.css";
 ### For Contributors
 
 **Development:**
+
 ```bash
 yarn install          # Install dependencies
 yarn start           # Start dev server (port 3000)
@@ -371,6 +398,7 @@ yarn fix            # Auto-fix lint/format issues
 ```
 
 **Entry Files:**
+
 - App: `excalidraw-app/index.tsx`
 - Library: `packages/excalidraw/index.tsx`
 
@@ -379,6 +407,7 @@ yarn fix            # Auto-fix lint/format issues
 ### npm Package (`@excalidraw/excalidraw`)
 
 **Published Structure:**
+
 ```
 dist/
 ├── dev/
@@ -394,6 +423,7 @@ dist/
 ### Web App (excalidraw.com)
 
 **Build Output:**
+
 ```
 excalidraw-app/build/
 ├── index.html
@@ -437,6 +467,7 @@ excalidraw-app/build/
 **Target:** < 1MB gzipped for main package
 
 **Optimization Strategies:**
+
 - Tree-shaking with ESM
 - Code splitting in app
 - Lazy loading for non-critical features
@@ -480,23 +511,27 @@ All packages are versioned together (currently 0.18.0) for simplicity.
 ### Key Libraries
 
 **UI & Rendering:**
+
 - `react` - UI framework
 - `roughjs` - Hand-drawn rendering
 - `perfect-freehand` - Free-draw smoothing
 - `@radix-ui/*` - Accessible UI primitives
 
 **State & Data:**
+
 - `jotai` - State management
 - `pako` - Compression
 - `nanoid` - ID generation
 - `fractional-indexing` - Element ordering
 
 **Utilities:**
+
 - `lodash.throttle`, `lodash.debounce` - Performance utilities
 - `browser-fs-access` - File system access
 - `clsx` - Class name composition
 
 **Fonts & Text:**
+
 - `fonteditor-core` - Font processing
 - `harfbuzzjs` - Text shaping
 

@@ -13,6 +13,7 @@ To democratize visual thinking and collaboration by providing a free, open-sourc
 ### 1. Core Product Goals
 
 **Primary Objectives:**
+
 - Provide a production-ready React component library (`@excalidraw/excalidraw`) for embedding in third-party applications
 - Deliver a fully-featured web application (excalidraw.com) demonstrating the library's capabilities
 - Maintain hand-drawn aesthetic that differentiates from traditional diagramming tools
@@ -20,6 +21,7 @@ To democratize visual thinking and collaboration by providing a free, open-sourc
 - Support offline-first workflows with local data persistence
 
 **Success Metrics:**
+
 - npm package downloads and integration adoption
 - Active users on excalidraw.com
 - Community contributions and ecosystem growth
@@ -31,6 +33,7 @@ To democratize visual thinking and collaboration by providing a free, open-sourc
 #### 2.1 Drawing & Editing
 
 **Must Have:**
+
 - Core shape primitives: rectangle, circle, diamond, ellipse, line, arrow, free-draw
 - Text elements with multiple font families (Virgil, Excalifont, Helvetica, Nunito, etc.)
 - Arrow binding to connect shapes
@@ -45,6 +48,7 @@ To democratize visual thinking and collaboration by providing a free, open-sourc
 - Keyboard shortcuts for power users
 
 **Should Have:**
+
 - Advanced shapes (frames, embeddable content)
 - Shape libraries for reusable templates
 - Snapping and alignment guides
@@ -56,6 +60,7 @@ To democratize visual thinking and collaboration by providing a free, open-sourc
 - Animation support (recent addition)
 
 **Nice to Have:**
+
 - Advanced path editing
 - Custom shape creation
 - Mermaid diagram conversion
@@ -65,6 +70,7 @@ To democratize visual thinking and collaboration by providing a free, open-sourc
 #### 2.2 Collaboration Features
 
 **Must Have (excalidraw.com):**
+
 - Real-time multiplayer editing
 - End-to-end encryption for privacy
 - Shareable links with read-only mode
@@ -72,6 +78,7 @@ To democratize visual thinking and collaboration by providing a free, open-sourc
 - Conflict resolution for concurrent edits
 
 **Should Have:**
+
 - Collaborative cursors with user identification
 - Comments and annotations
 - Version history
@@ -80,6 +87,7 @@ To democratize visual thinking and collaboration by providing a free, open-sourc
 #### 2.3 Import/Export
 
 **Must Have:**
+
 - Export to PNG with transparent backgrounds
 - Export to SVG for scalability
 - Export to clipboard for quick sharing
@@ -88,6 +96,7 @@ To democratize visual thinking and collaboration by providing a free, open-sourc
 - Import images into canvas
 
 **Should Have:**
+
 - Export to PDF
 - Batch export
 - Export selected elements only
@@ -97,6 +106,7 @@ To democratize visual thinking and collaboration by providing a free, open-sourc
 #### 2.4 Customization & Extensibility
 
 **Must Have:**
+
 - Theme support (light/dark mode)
 - Localization (i18n) for multiple languages
 - UI customization options via props
@@ -104,6 +114,7 @@ To democratize visual thinking and collaboration by providing a free, open-sourc
 - Programmable API for integrators
 
 **Should Have:**
+
 - Plugin system for extensions
 - Custom render hooks
 - Event system for integrations
@@ -114,6 +125,7 @@ To democratize visual thinking and collaboration by providing a free, open-sourc
 #### 3.1 Performance
 
 **Requirements:**
+
 - Initial load time < 2 seconds on 3G connection
 - Render 1000+ elements at 60fps
 - Canvas operations (pan, zoom) feel instant (<16ms frame time)
@@ -121,6 +133,7 @@ To democratize visual thinking and collaboration by providing a free, open-sourc
 - Bundle size < 1MB (gzipped) for core library
 
 **Optimization Strategies:**
+
 - Code splitting and lazy loading
 - Canvas rendering optimizations (dirty rectangles, offscreen rendering)
 - Worker threads for heavy computations
@@ -130,6 +143,7 @@ To democratize visual thinking and collaboration by providing a free, open-sourc
 #### 3.2 Accessibility
 
 **Requirements:**
+
 - WCAG 2.1 Level AA compliance
 - Keyboard navigation for all operations
 - Screen reader support
@@ -141,12 +155,14 @@ To democratize visual thinking and collaboration by providing a free, open-sourc
 #### 3.3 Browser Compatibility
 
 **Supported Browsers:**
+
 - Chrome/Edge >= 70
 - Firefox (latest)
 - Safari >= 12
 - Mobile browsers (iOS Safari, Chrome Mobile)
 
 **Not Supported:**
+
 - Internet Explorer
 - Opera Mini
 - KaiOS <= 2.5
@@ -154,6 +170,7 @@ To democratize visual thinking and collaboration by providing a free, open-sourc
 #### 3.4 Security & Privacy
 
 **Requirements:**
+
 - End-to-end encryption for collaboration (excalidraw.com)
 - No server-side data persistence without explicit user action
 - CSP (Content Security Policy) compliance
@@ -164,11 +181,13 @@ To democratize visual thinking and collaboration by providing a free, open-sourc
 #### 3.5 Data Persistence
 
 **Local Storage:**
+
 - Autosave to browser storage (IndexedDB)
 - Recovery from unexpected closures
 - Version migration for schema changes
 
 **Cloud Storage (excalidraw.com):**
+
 - Firebase integration for shareable links
 - Encrypted storage for collaborative sessions
 - Configurable retention policies
@@ -178,6 +197,7 @@ To democratize visual thinking and collaboration by providing a free, open-sourc
 #### 4.1 Technology Stack
 
 **Core Technologies:**
+
 - React 19.x for UI components
 - TypeScript 4.9.x for type safety
 - Jotai for state management
@@ -187,6 +207,7 @@ To democratize visual thinking and collaboration by providing a free, open-sourc
 - esbuild for package bundling
 
 **Supporting Libraries:**
+
 - @radix-ui for accessible UI primitives
 - pako for compression
 - nanoid for ID generation
@@ -196,12 +217,14 @@ To democratize visual thinking and collaboration by providing a free, open-sourc
 #### 4.2 Build & Development
 
 **Build Targets:**
+
 - ESM modules for npm package
 - Development and production bundles
 - CSS extraction with SCSS preprocessing
 - Type definitions (.d.ts files)
 
 **Development Tools:**
+
 - Vitest for unit testing
 - ESLint for code quality
 - Prettier for formatting
@@ -211,6 +234,7 @@ To democratize visual thinking and collaboration by providing a free, open-sourc
 #### 4.3 Package Architecture
 
 **Monorepo Structure:**
+
 - `packages/excalidraw` - Main React component library
 - `packages/common` - Shared utilities and constants
 - `packages/element` - Element-related logic
@@ -219,6 +243,7 @@ To democratize visual thinking and collaboration by providing a free, open-sourc
 - `excalidraw-app` - Web application
 
 **Dependency Rules:**
+
 - Common layer has no dependencies on other packages
 - Math depends only on common
 - Element depends on common and math
@@ -230,21 +255,25 @@ To democratize visual thinking and collaboration by providing a free, open-sourc
 #### Primary Personas
 
 **1. Software Developer (Integrator)**
+
 - **Goal:** Embed Excalidraw in their application
 - **Needs:** Clean API, TypeScript support, customization options
 - **Use Cases:** Documentation tools, design software, educational platforms
 
 **2. Visual Thinker (End User)**
+
 - **Goal:** Create diagrams and wireframes quickly
 - **Needs:** Intuitive UI, hand-drawn aesthetic, quick exports
 - **Use Cases:** Architecture diagrams, wireframes, brainstorming, meeting notes
 
 **3. Remote Team (Collaborators)**
+
 - **Goal:** Collaborate on visual ideas in real-time
 - **Needs:** Low latency, privacy, presence awareness
 - **Use Cases:** Design reviews, sprint planning, workshops
 
 **4. Educator/Student**
+
 - **Goal:** Create visual learning materials or notes
 - **Needs:** Simple interface, export options, offline support
 - **Use Cases:** Lecture diagrams, study notes, concept maps
@@ -252,16 +281,19 @@ To democratize visual thinking and collaboration by providing a free, open-sourc
 #### Key Use Cases
 
 1. **Quick Sketch Creation**
+
    - User opens excalidraw.com
    - Draws shapes and annotations
    - Exports to PNG for sharing
 
 2. **Collaborative Design Session**
+
    - User creates shareable link
    - Team joins and edits together
    - Changes sync in real-time with encryption
 
 3. **Application Integration**
+
    - Developer installs npm package
    - Embeds component with custom configuration
    - Handles events and data persistence
@@ -300,6 +332,7 @@ To democratize visual thinking and collaboration by providing a free, open-sourc
 ### 7. Quality Standards
 
 **Code Quality:**
+
 - TypeScript strict mode enabled
 - ESLint with no warnings
 - Prettier formatting enforced
@@ -307,6 +340,7 @@ To democratize visual thinking and collaboration by providing a free, open-sourc
 - Pre-commit hooks for validation
 
 **Documentation:**
+
 - JSDoc comments for public APIs
 - README files for each package
 - API documentation (docs.excalidraw.com)
@@ -314,6 +348,7 @@ To democratize visual thinking and collaboration by providing a free, open-sourc
 - Migration guides for breaking changes
 
 **Testing:**
+
 - Unit tests for business logic
 - Integration tests for critical flows
 - Visual regression tests for UI
@@ -323,17 +358,20 @@ To democratize visual thinking and collaboration by providing a free, open-sourc
 ### 8. Constraints & Limitations
 
 **Technical Constraints:**
+
 - Browser canvas API limitations
 - Memory constraints for very large diagrams (1000s of elements)
 - WebRTC limitations for collaboration scaling
 - Bundle size constraints for npm package
 
 **Design Constraints:**
+
 - Must maintain hand-drawn aesthetic
 - Cannot compromise on privacy/encryption
 - Must work offline (PWA requirement)
 
 **Resource Constraints:**
+
 - Open-source project with volunteer contributors
 - Limited resources for comprehensive QA
 - Balancing feature requests with maintenance
@@ -341,6 +379,7 @@ To democratize visual thinking and collaboration by providing a free, open-sourc
 ### 9. Success Criteria
 
 **Launch Criteria (v1.0):**
+
 - Core drawing features complete
 - Export/import functionality working
 - TypeScript definitions accurate
@@ -349,6 +388,7 @@ To democratize visual thinking and collaboration by providing a free, open-sourc
 - Zero critical bugs
 
 **Ongoing Success Metrics:**
+
 - Community engagement (GitHub stars, contributors)
 - Integration examples from third parties
 - Performance benchmarks maintained

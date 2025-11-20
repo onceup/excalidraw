@@ -311,7 +311,10 @@ const _renderStaticScene = ({
   }
 
   // Render restricted area boundary
-  if (appState.restrictedArea?.enabled && appState.restrictedArea.showBoundary) {
+  if (
+    appState.restrictedArea?.enabled &&
+    appState.restrictedArea.showBoundary
+  ) {
     renderRestrictedAreaBoundary(context, appState.restrictedArea, appState);
   }
 

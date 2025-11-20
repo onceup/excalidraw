@@ -82,6 +82,7 @@ packages/excalidraw/
 ### Examples
 
 **Good:**
+
 ```
 components/ColorPicker/ColorPicker.tsx
 components/ColorPicker/ColorPicker.scss
@@ -91,6 +92,7 @@ types.ts
 ```
 
 **Avoid:**
+
 ```
 components/color_picker.tsx        # Use PascalCase for components
 hooks/use-callback-ref-state.ts    # Use camelCase for non-components
@@ -103,6 +105,7 @@ util.ts                            # Too vague, be specific
 ### Type Safety
 
 **Always use strict TypeScript:**
+
 ```typescript
 // tsconfig.json
 {
@@ -117,6 +120,7 @@ util.ts                            # Too vague, be specific
 ### Type Definitions
 
 **Prefer types over interfaces for simple structures:**
+
 ```typescript
 // Good - Types for simple structures
 export type Point = {
@@ -163,7 +167,7 @@ type ExcalidrawElement =
 
 // Each type has a discriminator property
 type ExcalidrawRectangleElement = {
-  type: "rectangle";  // Discriminator
+  type: "rectangle"; // Discriminator
   // ... other properties
 };
 ```
@@ -192,10 +196,10 @@ export const isTextElement = (
 
 ```typescript
 // Bad
-function processData(data: any) { }
+function processData(data: any) {}
 
 // Good
-function processData<T extends ExcalidrawElement>(data: T) { }
+function processData<T extends ExcalidrawElement>(data: T) {}
 
 // Acceptable (when dealing with truly unknown types)
 function parseJSON(input: string): unknown {
@@ -251,7 +255,7 @@ export const Button: React.FC<ButtonProps> = ({
   onClick,
   children,
   variant = "primary",
-  disabled = false
+  disabled = false,
 }) => {
   // Implementation
 };
@@ -310,7 +314,7 @@ const isValidColor = (color: string): boolean => {
 // 5. Component definition
 export const ColorPicker: React.FC<ColorPickerProps> = ({
   color,
-  onChange
+  onChange,
 }) => {
   // Component implementation
 };
@@ -348,13 +352,13 @@ const isCollaborating = true;
 const hasUnsavedChanges = false;
 
 // Functions
-function getUserName() { }
-function calculateBounds() { }
-function isElementSelected() { }
+function getUserName() {}
+function calculateBounds() {}
+function isElementSelected() {}
 
 // Event handlers
-function handleClick() { }
-function onPointerDown() { }
+function handleClick() {}
+function onPointerDown() {}
 ```
 
 ### Constants
@@ -386,11 +390,11 @@ const THEME = {
 - **PascalCase** for classes, types, interfaces, enums
 
 ```typescript
-class ElementCache { }
+class ElementCache {}
 
-type ExcalidrawElement = { };
+type ExcalidrawElement = {};
 
-interface ExcalidrawAPI { }
+interface ExcalidrawAPI {}
 
 enum ToolType {
   Selection = "selection",
@@ -435,8 +439,12 @@ export function getElementBounds(element: ExcalidrawElement): Bounds {
 }
 
 // Avoid - Mutates input
-function updateElementPosition(element: ExcalidrawElement, x: number, y: number) {
-  element.x = x;  // Mutation!
+function updateElementPosition(
+  element: ExcalidrawElement,
+  x: number,
+  y: number,
+) {
+  element.x = x; // Mutation!
   element.y = y;
 }
 ```
@@ -471,10 +479,18 @@ function complexOperation() {
   return finalizeResult(step3);
 }
 
-function performStep1() { /* ... */ }
-function performStep2(input: any) { /* ... */ }
-function performStep3(input: any) { /* ... */ }
-function finalizeResult(input: any) { /* ... */ }
+function performStep1() {
+  /* ... */
+}
+function performStep2(input: any) {
+  /* ... */
+}
+function performStep3(input: any) {
+  /* ... */
+}
+function finalizeResult(input: any) {
+  /* ... */
+}
 ```
 
 ## Import/Export Standards
@@ -517,8 +533,8 @@ import "./App.scss";
 
 ```typescript
 // Good - Named exports
-export const Button = () => { };
-export const Icon = () => { };
+export const Button = () => {};
+export const Icon = () => {};
 
 // Use default export only for main component of file
 export default App;
@@ -580,6 +596,7 @@ describe("calculateElementBounds", () => {
 ### Test Coverage
 
 Aim for:
+
 - 60%+ line coverage
 - 70%+ branch coverage
 - 100% coverage for critical business logic
@@ -600,6 +617,7 @@ it("should render button correctly", () => {
 ### ESLint
 
 Run before committing:
+
 ```bash
 yarn test:code          # Check for issues
 yarn fix:code          # Auto-fix issues
@@ -608,6 +626,7 @@ yarn fix:code          # Auto-fix issues
 ### Prettier
 
 Format code automatically:
+
 ```bash
 yarn fix:other         # Format non-code files
 yarn fix              # Format everything
@@ -616,6 +635,7 @@ yarn fix              # Format everything
 ### TypeScript
 
 Type-check before committing:
+
 ```bash
 yarn test:typecheck
 ```
@@ -623,6 +643,7 @@ yarn test:typecheck
 ### Pre-commit Hooks
 
 Husky runs these automatically:
+
 - ESLint on staged files
 - Prettier on staged files
 - TypeScript type checking
@@ -714,12 +735,15 @@ throw new ExcalidrawError("Invalid element type", "INVALID_ELEMENT_TYPE");
 Use React.memo for expensive components:
 
 ```typescript
-export const ExpensiveComponent = React.memo(({ data }: Props) => {
-  // Expensive rendering
-}, (prevProps, nextProps) => {
-  // Custom comparison
-  return isEqual(prevProps.data, nextProps.data);
-});
+export const ExpensiveComponent = React.memo(
+  ({ data }: Props) => {
+    // Expensive rendering
+  },
+  (prevProps, nextProps) => {
+    // Custom comparison
+    return isEqual(prevProps.data, nextProps.data);
+  },
+);
 ```
 
 ### useMemo and useCallback
@@ -804,6 +828,7 @@ onKeyDown={(e) => {
 ```
 
 **Types:**
+
 - `feat:` New feature
 - `fix:` Bug fix
 - `docs:` Documentation changes
@@ -814,6 +839,7 @@ onKeyDown={(e) => {
 - `chore:` Maintenance tasks
 
 **Examples:**
+
 ```
 feat: Add animation support for elements
 
@@ -872,11 +898,13 @@ Break down large components into smaller, focused ones.
 
 ```typescript
 // Bad
-if (element.width < 0.1) { }
+if (element.width < 0.1) {
+}
 
 // Good
 const INVISIBLY_SMALL_ELEMENT_SIZE = 0.1;
-if (element.width < INVISIBLY_SMALL_ELEMENT_SIZE) { }
+if (element.width < INVISIBLY_SMALL_ELEMENT_SIZE) {
+}
 ```
 
 ### 4. Circular Dependencies

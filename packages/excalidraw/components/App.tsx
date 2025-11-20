@@ -413,6 +413,7 @@ import {
   shouldEnforceRestriction,
   isElementCompletelyInRestrictedArea,
   clampDragOffsetToRestrictedArea,
+  trimFreedrawPointsToRestrictedArea,
 } from "../utils/restrictedArea";
 
 import ConvertElementTypePopup, {
@@ -706,9 +707,16 @@ class App extends React.Component<AppProps, AppState> {
           showBoundary: restrictedArea.showBoundary ?? true,
           boundaryStyle: {
             strokeColor: restrictedArea.boundaryStyle?.strokeColor ?? "#6965db",
-            strokeWidth: Math.max(0.5, Math.min(restrictedArea.boundaryStyle?.strokeWidth ?? 2, 20)),
-            backgroundColor: restrictedArea.boundaryStyle?.backgroundColor ?? null,
-            opacity: Math.max(0, Math.min(restrictedArea.boundaryStyle?.opacity ?? 0.1, 1)),
+            strokeWidth: Math.max(
+              0.5,
+              Math.min(restrictedArea.boundaryStyle?.strokeWidth ?? 2, 20),
+            ),
+            backgroundColor:
+              restrictedArea.boundaryStyle?.backgroundColor ?? null,
+            opacity: Math.max(
+              0,
+              Math.min(restrictedArea.boundaryStyle?.opacity ?? 0.1, 1),
+            ),
           },
           enforcement: restrictedArea.enforcement ?? "soft",
         }
@@ -5921,8 +5929,11 @@ class App extends React.Component<AppProps, AppState> {
 
     let scenePointer = viewportCoordsToSceneCoords(event, this.state);
 
-    // Clamp pointer to restricted area if enabled
-    if (shouldEnforceRestriction(this.state.restrictedArea)) {
+    // Clamp pointer to restricted area if enabled (only for soft mode)
+    if (
+      shouldEnforceRestriction(this.state.restrictedArea) &&
+      this.state.restrictedArea.enforcement === "soft"
+    ) {
       scenePointer = clampPointToRestrictedArea(
         scenePointer,
         this.state.restrictedArea,
@@ -6933,8 +6944,11 @@ class App extends React.Component<AppProps, AppState> {
       this.state,
     );
 
-    // Clamp pointer to restricted area if enabled
-    if (shouldEnforceRestriction(this.state.restrictedArea)) {
+    // Clamp pointer to restricted area if enabled (only for soft mode)
+    if (
+      shouldEnforceRestriction(this.state.restrictedArea) &&
+      this.state.restrictedArea.enforcement === "soft"
+    ) {
       scenePointer = clampPointToRestrictedArea(
         scenePointer,
         this.state.restrictedArea,
@@ -7178,8 +7192,11 @@ class App extends React.Component<AppProps, AppState> {
   ): PointerDownState {
     let origin = viewportCoordsToSceneCoords(event, this.state);
 
-    // Clamp pointer to restricted area if enabled
-    if (shouldEnforceRestriction(this.state.restrictedArea)) {
+    // Clamp pointer to restricted area if enabled (only for soft mode)
+    if (
+      shouldEnforceRestriction(this.state.restrictedArea) &&
+      this.state.restrictedArea.enforcement === "soft"
+    ) {
       origin = clampPointToRestrictedArea(origin, this.state.restrictedArea);
     }
 
@@ -8329,8 +8346,11 @@ class App extends React.Component<AppProps, AppState> {
       }
       let pointerCoords = viewportCoordsToSceneCoords(event, this.state);
 
-      // Clamp pointer to restricted area if enabled
-      if (shouldEnforceRestriction(this.state.restrictedArea)) {
+      // Clamp pointer to restricted area if enabled (only for soft mode)
+      if (
+        shouldEnforceRestriction(this.state.restrictedArea) &&
+        this.state.restrictedArea.enforcement === "soft"
+      ) {
         pointerCoords = clampPointToRestrictedArea(
           pointerCoords,
           this.state.restrictedArea,
@@ -9447,6 +9467,52 @@ class App extends React.Component<AppProps, AppState> {
           lastCommittedPoint: pointFrom<LocalPoint>(dx, dy),
         });
 
+        // Trim freedraw points if outside restricted area
+        if (
+          shouldEnforceRestriction(this.state.restrictedArea) &&
+          this.state.restrictedArea.enforcement === "trim" &&
+          !isElementCompletelyInRestrictedArea(
+            newElement,
+            this.state.restrictedArea,
+            this.scene.getNonDeletedElementsMap(),
+          )
+        ) {
+          const trimmedPoints = trimFreedrawPointsToRestrictedArea(
+            newElement.points,
+            newElement.x,
+            newElement.y,
+            this.state.restrictedArea,
+          );
+          console.log("TRIM:", {
+            original: newElement.points.length,
+            trimmed: trimmedPoints.length,
+            elementPos: { x: newElement.x, y: newElement.y },
+            firstPoint: newElement.points[0],
+            lastPoint: newElement.points[newElement.points.length - 1],
+          });
+
+          if (trimmedPoints.length < 2) {
+            // Not enough points left - delete element
+            this.scene.replaceAllElements([
+              ...this.scene
+                .getElementsIncludingDeleted()
+                .filter((el) => el.id !== newElement.id),
+            ]);
+          } else {
+            // Update element with trimmed points
+            this.scene.mutateElement(newElement, {
+              points: trimmedPoints as any,
+            });
+
+            // Update appState.newElement to reference the mutated element
+            // so actionFinalize uses the trimmed version
+            const updatedElement = this.scene.getElement(newElement.id);
+            if (updatedElement) {
+              this.setState({ newElement: updatedElement });
+            }
+          }
+        }
+
         this.actionManager.executeAction(actionFinalize);
 
         return;
@@ -10073,29 +10139,6 @@ class App extends React.Component<AppProps, AppState> {
         }
         // reset cursor
         setCursor(this.interactiveCanvas, CURSOR_TYPE.AUTO);
-        return;
-      }
-
-      // Cleanup elements outside restricted area on release
-      if (
-        newElement &&
-        shouldEnforceRestriction(this.state.restrictedArea) &&
-        !isElementCompletelyInRestrictedArea(
-          newElement,
-          this.state.restrictedArea,
-          this.scene.getNonDeletedElementsMap(),
-        )
-      ) {
-        // Element extends outside restricted area - mark as deleted
-        this.scene.replaceAllElements([
-          ...this.scene.getElementsIncludingDeleted().map((el) =>
-            el.id === newElement.id
-              ? newElementWith(el, { isDeleted: true })
-              : el,
-          ),
-        ]);
-        this.setState({ newElement: null, suggestedBindings: [] });
-        this.store.scheduleCapture();
         return;
       }
 

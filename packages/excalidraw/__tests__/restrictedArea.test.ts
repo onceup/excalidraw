@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+
 import {
   isPointInRestrictedArea,
   isElementInRestrictedArea,
@@ -7,9 +8,12 @@ import {
   clampPointToRestrictedArea,
   shouldEnforceRestriction,
   clampDragOffsetToRestrictedArea,
+  trimFreedrawPointsToRestrictedArea,
 } from "../utils/restrictedArea";
-import type { AppState } from "../types";
+
 import { API } from "../tests/helpers/api";
+
+import type { AppState } from "../types";
 
 describe("restrictedArea utilities", () => {
   const testArea: NonNullable<AppState["restrictedArea"]> = {
@@ -382,6 +386,226 @@ describe("restrictedArea utilities", () => {
       );
 
       expect(clamped).toEqual({ x: -50, y: -50 });
+    });
+  });
+
+  describe("trimFreedrawPointsToRestrictedArea", () => {
+    it("should keep all points when completely inside area", () => {
+      const points = [
+        { x: 0, y: 0 },
+        { x: 50, y: 50 },
+        { x: 100, y: 0 },
+      ];
+      const elementX = 400;
+      const elementY = 400;
+
+      const trimmed = trimFreedrawPointsToRestrictedArea(
+        points,
+        elementX,
+        elementY,
+        testArea,
+      );
+
+      expect(trimmed).toEqual(points);
+    });
+
+    it("should remove points completely outside area", () => {
+      const points = [
+        { x: 0, y: 0 },
+        { x: 50, y: 50 },
+        { x: 100, y: 100 },
+      ];
+      const elementX = 2000; // Way outside area
+      const elementY = 2000;
+
+      const trimmed = trimFreedrawPointsToRestrictedArea(
+        points,
+        elementX,
+        elementY,
+        testArea,
+      );
+
+      expect(trimmed).toEqual([]);
+    });
+
+    it("should add intersection point when line exits boundary", () => {
+      const points = [
+        { x: 0, y: 0 }, // Inside (at 500, 500)
+        { x: 600, y: 0 }, // Outside (at 1100, 500)
+      ];
+      const elementX = 500;
+      const elementY = 500;
+
+      const trimmed = trimFreedrawPointsToRestrictedArea(
+        points,
+        elementX,
+        elementY,
+        testArea,
+      );
+
+      expect(trimmed.length).toBe(2);
+      expect(trimmed[0]).toEqual({ x: 0, y: 0 }); // First point unchanged
+      expect(trimmed[1].x).toBeCloseTo(524, 0); // Intersection at right boundary (1024 - 500)
+      expect(trimmed[1].y).toBeCloseTo(0, 0);
+    });
+
+    it("should add intersection point when line enters boundary", () => {
+      const points = [
+        { x: 0, y: 0 }, // Inside (at 100, 500)
+        { x: -200, y: 0 }, // Outside (at -100, 500)
+        { x: -200, y: 200 }, // Outside (at -100, 700)
+        { x: 0, y: 200 }, // Inside (at 100, 700)
+      ];
+      const elementX = 100;
+      const elementY = 500;
+
+      const trimmed = trimFreedrawPointsToRestrictedArea(
+        points,
+        elementX,
+        elementY,
+        testArea,
+      );
+
+      // Should have first point, exit intersection, (skip outside), entry intersection, last point
+      expect(trimmed.length).toBeGreaterThanOrEqual(2);
+      expect(trimmed[0]).toEqual({ x: 0, y: 0 }); // First point inside
+    });
+
+    it("should handle line crossing boundary twice", () => {
+      const points = [
+        { x: 0, y: 0 }, // Inside (at 512, 512)
+        { x: 600, y: 0 }, // Outside (at 1112, 512)
+        { x: 600, y: 600 }, // Outside (at 1112, 1112)
+        { x: 0, y: 600 }, // Inside (at 512, 1112)
+      ];
+      const elementX = 512;
+      const elementY = 512;
+
+      const trimmed = trimFreedrawPointsToRestrictedArea(
+        points,
+        elementX,
+        elementY,
+        testArea,
+      );
+
+      // Should have: original point, exit intersection, (skip outside segments), entry intersection, final point
+      expect(trimmed.length).toBeGreaterThanOrEqual(2);
+      expect(trimmed[0]).toEqual({ x: 0, y: 0 }); // First point
+    });
+
+    it("should handle complex path with multiple boundary crossings", () => {
+      const points = [
+        { x: 0, y: 0 }, // Inside (at 100, 100)
+        { x: 1000, y: 0 }, // Outside (at 1100, 100)
+        { x: 1000, y: 1000 }, // Outside (at 1100, 1100)
+        { x: 0, y: 1000 }, // Inside (at 100, 1100)
+        { x: 0, y: 0 }, // Inside (at 100, 100)
+      ];
+      const elementX = 100;
+      const elementY = 100;
+
+      const trimmed = trimFreedrawPointsToRestrictedArea(
+        points,
+        elementX,
+        elementY,
+        testArea,
+      );
+
+      // Should contain intersections and inside points
+      expect(trimmed.length).toBeGreaterThan(0);
+      expect(trimmed[0]).toEqual({ x: 0, y: 0 });
+    });
+
+    it("should return empty array for single point outside", () => {
+      const points = [{ x: 0, y: 0 }];
+      const elementX = 2000;
+      const elementY = 2000;
+
+      const trimmed = trimFreedrawPointsToRestrictedArea(
+        points,
+        elementX,
+        elementY,
+        testArea,
+      );
+
+      expect(trimmed).toEqual([]);
+    });
+
+    it("should keep single point inside", () => {
+      const points = [{ x: 0, y: 0 }];
+      const elementX = 500;
+      const elementY = 500;
+
+      const trimmed = trimFreedrawPointsToRestrictedArea(
+        points,
+        elementX,
+        elementY,
+        testArea,
+      );
+
+      expect(trimmed).toEqual(points);
+    });
+
+    it("should handle points on boundary edges", () => {
+      const points = [
+        { x: -500, y: -500 }, // At (0, 0) - top-left corner
+        { x: 524, y: -500 }, // At (1024, 0) - top-right corner
+      ];
+      const elementX = 500;
+      const elementY = 500;
+
+      const trimmed = trimFreedrawPointsToRestrictedArea(
+        points,
+        elementX,
+        elementY,
+        testArea,
+      );
+
+      expect(trimmed.length).toBeGreaterThanOrEqual(2);
+    });
+
+    it("should handle vertical line crossing horizontal boundary", () => {
+      const points = [
+        { x: 0, y: -600 }, // Inside (at 500, 400)
+        { x: 0, y: 600 }, // Inside (at 500, 1100 - outside)
+      ];
+      const elementX = 500;
+      const elementY = 1000;
+
+      const trimmed = trimFreedrawPointsToRestrictedArea(
+        points,
+        elementX,
+        elementY,
+        testArea,
+      );
+
+      expect(trimmed.length).toBe(2);
+      expect(trimmed[0].x).toBeCloseTo(0, 0);
+      expect(trimmed[0].y).toBeCloseTo(-600, 0); // First point inside
+      expect(trimmed[1].x).toBeCloseTo(0, 0);
+      expect(trimmed[1].y).toBeCloseTo(24, 0); // Intersection at bottom boundary (1024 - 1000)
+    });
+
+    it("should handle horizontal line crossing vertical boundary", () => {
+      const points = [
+        { x: -600, y: 0 }, // Inside (at 400, 500)
+        { x: 600, y: 0 }, // Outside (at 1100, 500)
+      ];
+      const elementX = 1000;
+      const elementY = 500;
+
+      const trimmed = trimFreedrawPointsToRestrictedArea(
+        points,
+        elementX,
+        elementY,
+        testArea,
+      );
+
+      expect(trimmed.length).toBe(2);
+      expect(trimmed[0].x).toBeCloseTo(-600, 0); // First point inside
+      expect(trimmed[0].y).toBeCloseTo(0, 0);
+      expect(trimmed[1].x).toBeCloseTo(24, 0); // Intersection at right boundary (1024 - 1000)
+      expect(trimmed[1].y).toBeCloseTo(0, 0);
     });
   });
 });

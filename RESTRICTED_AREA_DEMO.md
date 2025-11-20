@@ -9,85 +9,98 @@ Create a file `test-restricted-area.html` in the `excalidraw-app/` directory:
 ```html
 <!DOCTYPE html>
 <html>
-<head>
-  <title>Restricted Area Test</title>
-  <style>
-    body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
-    #canvas { width: 100vw; height: 100vh; }
-    .controls {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: white;
-      padding: 15px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      z-index: 1000;
-    }
-    .controls button { margin: 5px 0; display: block; width: 100%; }
-  </style>
-</head>
-<body>
-  <div class="controls">
-    <h3>Restricted Area Demo</h3>
-    <button onclick="toggleRestriction()">Toggle Restriction</button>
-    <button onclick="changeBoundary()">Change Boundary Size</button>
-    <button onclick="changeStyle()">Change Style</button>
-  </div>
-  <div id="canvas"></div>
+  <head>
+    <title>Restricted Area Test</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 20px;
+        font-family: Arial, sans-serif;
+      }
+      #canvas {
+        width: 100vw;
+        height: 100vh;
+      }
+      .controls {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: white;
+        padding: 15px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        z-index: 1000;
+      }
+      .controls button {
+        margin: 5px 0;
+        display: block;
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="controls">
+      <h3>Restricted Area Demo</h3>
+      <button onclick="toggleRestriction()">Toggle Restriction</button>
+      <button onclick="changeBoundary()">Change Boundary Size</button>
+      <button onclick="changeStyle()">Change Style</button>
+    </div>
+    <div id="canvas"></div>
 
-  <script type="module">
-    import { Excalidraw } from "@excalidraw/excalidraw";
-    import { createRoot } from "react-dom/client";
-    import { createElement } from "react";
+    <script type="module">
+      import { Excalidraw } from "@excalidraw/excalidraw";
+      import { createRoot } from "react-dom/client";
+      import { createElement } from "react";
 
-    let restrictionEnabled = true;
-    let boundarySize = 1024;
+      let restrictionEnabled = true;
+      let boundarySize = 1024;
 
-    const root = createRoot(document.getElementById("canvas"));
+      const root = createRoot(document.getElementById("canvas"));
 
-    function render() {
-      root.render(
-        createElement(Excalidraw, {
-          restrictedArea: restrictionEnabled ? {
-            enabled: true,
-            x: 100,
-            y: 100,
-            width: boundarySize,
-            height: boundarySize,
-            showBoundary: true,
-            boundaryStyle: {
-              strokeColor: "#6965db",
-              strokeWidth: 2,
-              backgroundColor: "rgba(105, 101, 219, 0.05)",
-              opacity: 0.1,
-            },
-            enforcement: "soft",
-          } : null,
-        })
-      );
-    }
+      function render() {
+        root.render(
+          createElement(Excalidraw, {
+            restrictedArea: restrictionEnabled
+              ? {
+                  enabled: true,
+                  x: 100,
+                  y: 100,
+                  width: boundarySize,
+                  height: boundarySize,
+                  showBoundary: true,
+                  boundaryStyle: {
+                    strokeColor: "#6965db",
+                    strokeWidth: 2,
+                    backgroundColor: "rgba(105, 101, 219, 0.05)",
+                    opacity: 0.1,
+                  },
+                  enforcement: "soft",
+                }
+              : null,
+          }),
+        );
+      }
 
-    window.toggleRestriction = () => {
-      restrictionEnabled = !restrictionEnabled;
+      window.toggleRestriction = () => {
+        restrictionEnabled = !restrictionEnabled;
+        render();
+        console.log("Restriction:", restrictionEnabled ? "ON" : "OFF");
+      };
+
+      window.changeBoundary = () => {
+        boundarySize = boundarySize === 1024 ? 2048 : 1024;
+        render();
+        console.log("Boundary size:", boundarySize);
+      };
+
+      window.changeStyle = () => {
+        // This would need state management in a real app
+        console.log("Style changed (implement state management)");
+      };
+
       render();
-      console.log("Restriction:", restrictionEnabled ? "ON" : "OFF");
-    };
-
-    window.changeBoundary = () => {
-      boundarySize = boundarySize === 1024 ? 2048 : 1024;
-      render();
-      console.log("Boundary size:", boundarySize);
-    };
-
-    window.changeStyle = () => {
-      // This would need state management in a real app
-      console.log("Style changed (implement state management)");
-    };
-
-    render();
-  </script>
-</body>
+    </script>
+  </body>
 </html>
 ```
 
@@ -107,16 +120,18 @@ export default function RestrictedAreaDemo() {
   return (
     <div style={{ width: "100vw", height: "100vh" }}>
       {/* Controls */}
-      <div style={{
-        position: "fixed",
-        top: 20,
-        right: 20,
-        background: "white",
-        padding: 15,
-        borderRadius: 8,
-        boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-        zIndex: 1000,
-      }}>
+      <div
+        style={{
+          position: "fixed",
+          top: 20,
+          right: 20,
+          background: "white",
+          padding: 15,
+          borderRadius: 8,
+          boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+          zIndex: 1000,
+        }}
+      >
         <h3>Restricted Area Controls</h3>
 
         <label>
@@ -139,7 +154,10 @@ export default function RestrictedAreaDemo() {
 
         <label>
           Size:
-          <select value={size} onChange={(e) => setSize(Number(e.target.value))}>
+          <select
+            value={size}
+            onChange={(e) => setSize(Number(e.target.value))}
+          >
             <option value={512}>512px</option>
             <option value={1024}>1024px</option>
             <option value={2048}>2048px</option>
@@ -149,21 +167,25 @@ export default function RestrictedAreaDemo() {
 
       {/* Excalidraw Canvas */}
       <Excalidraw
-        restrictedArea={enabled ? {
-          enabled: true,
-          x: 0,
-          y: 0,
-          width: size,
-          height: size,
-          showBoundary,
-          boundaryStyle: {
-            strokeColor: "#6965db",
-            strokeWidth: 2,
-            backgroundColor: "rgba(105, 101, 219, 0.05)",
-            opacity: 0.1,
-          },
-          enforcement: "soft",
-        } : null}
+        restrictedArea={
+          enabled
+            ? {
+                enabled: true,
+                x: 0,
+                y: 0,
+                width: size,
+                height: size,
+                showBoundary,
+                boundaryStyle: {
+                  strokeColor: "#6965db",
+                  strokeWidth: 2,
+                  backgroundColor: "rgba(105, 101, 219, 0.05)",
+                  opacity: 0.1,
+                },
+                enforcement: "soft",
+              }
+            : null
+        }
       />
     </div>
   );
@@ -196,6 +218,7 @@ Modify `excalidraw-app/App.tsx` to add the `restrictedArea` prop:
 ```
 
 Then run:
+
 ```bash
 yarn start
 ```
@@ -203,7 +226,9 @@ yarn start
 ## What to Test
 
 ### ✅ Phase 1: Rendering & Boundary
+
 1. **Visual Boundary**
+
    - You should see a dashed red/purple boundary box
    - Background should have slight tint
    - Boundary should be visible when zooming in/out
@@ -214,12 +239,15 @@ yarn start
    - Elements fully outside should not be visible
 
 ### ✅ Phase 2: Pointer & Creation
+
 3. **Pointer Clamping**
+
    - Try to move mouse outside boundary while drawing
    - Pointer should "stick" to boundary edge
    - Cursor should not go beyond boundary
 
 4. **Element Cleanup**
+
    - Try to draw an element starting inside but extending outside
    - When you release mouse, element should be deleted
    - Draw completely inside - element should remain
@@ -230,7 +258,9 @@ yarn start
    - No spikes or artifacts should appear
 
 ### ✅ Phase 3: Dragging
+
 6. **Element Dragging**
+
    - Create an element inside boundary
    - Try to drag it outside
    - Element should stop at boundary edge
@@ -245,6 +275,7 @@ yarn start
 ## Testing Commands
 
 ### Run Unit Tests
+
 ```bash
 # All restricted area tests
 yarn test:app packages/excalidraw/__tests__/restrictedArea.test.ts --run
@@ -254,11 +285,13 @@ yarn test:app packages/excalidraw/__tests__/restrictedArea.test.ts
 ```
 
 ### Type Checking
+
 ```bash
 yarn test:typecheck
 ```
 
 ### Build Test
+
 ```bash
 yarn build
 ```
@@ -266,6 +299,7 @@ yarn build
 ## Configuration Options
 
 ### Basic Configuration
+
 ```typescript
 restrictedArea: {
   enabled: true,              // Toggle on/off
@@ -280,18 +314,53 @@ restrictedArea: {
     backgroundColor: null,    // Fill color (null = transparent)
     opacity: 0.1,             // Background opacity (0-1)
   },
-  enforcement: "soft",        // Only "soft" supported currently
+  enforcement: "soft",        // "soft" or "trim"
+}
+```
+
+### Enforcement Modes
+
+**"soft" (default)** - Clip at render time:
+- Drawing continues outside boundary during creation
+- Elements are clipped visually at the boundary
+- Elements outside boundary are deleted on mouse release
+- Best for strict boundaries
+
+**"trim"** - Trim on release:
+- Allows freedraw to continue outside boundary
+- On mouse release, line segments outside boundary are cut off
+- Element is kept if ≥2 points remain after trimming
+- Great for natural drawing experience with soft boundaries
+
+Example with trim mode:
+```typescript
+restrictedArea: {
+  enabled: true,
+  x: 0,
+  y: 0,
+  width: 1024,
+  height: 1024,
+  showBoundary: true,
+  boundaryStyle: {
+    strokeColor: "#6965db",
+    strokeWidth: 2,
+    backgroundColor: "rgba(105, 101, 219, 0.05)",
+    opacity: 0.1,
+  },
+  enforcement: "trim",  // Use trim mode
 }
 ```
 
 ### Disable Restriction
+
 ```typescript
-restrictedArea: null  // or don't pass the prop
+restrictedArea: null; // or don't pass the prop
 ```
 
 ### Custom Styling Examples
 
 **Red Warning Boundary:**
+
 ```typescript
 boundaryStyle: {
   strokeColor: "#ff0000",
@@ -302,6 +371,7 @@ boundaryStyle: {
 ```
 
 **Subtle Gray Boundary:**
+
 ```typescript
 boundaryStyle: {
   strokeColor: "#cccccc",
@@ -312,6 +382,7 @@ boundaryStyle: {
 ```
 
 **High Contrast:**
+
 ```typescript
 boundaryStyle: {
   strokeColor: "#000000",
@@ -324,18 +395,21 @@ boundaryStyle: {
 ## Troubleshooting
 
 ### Boundary not showing?
+
 - Check `showBoundary: true`
 - Verify coordinates are in viewport
 - Try zooming out to see the boundary
 - Check console for errors
 
 ### Elements not constrained?
+
 - Ensure `enabled: true`
 - Check `enforcement: "soft"` is set
 - Verify dimensions are positive numbers
 - Check TypeScript compilation passed
 
 ### Tests failing?
+
 - Run `yarn test:typecheck` first
 - Ensure all dependencies installed: `yarn install`
 - Check Node version: `node --version` (should be 18+)

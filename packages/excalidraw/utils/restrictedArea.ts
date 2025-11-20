@@ -1,7 +1,10 @@
-import type { AppState } from "../types";
+import { getElementBounds } from "@excalidraw/element";
+import { pointFrom, type LocalPoint } from "@excalidraw/math";
+
 import type { ExcalidrawElement } from "@excalidraw/element/types";
 import type { ElementsMap } from "@excalidraw/element/types";
-import { getElementBounds } from "@excalidraw/element";
+
+import type { AppState } from "../types";
 
 type RestrictedAreaConfig = NonNullable<AppState["restrictedArea"]>;
 type Point = { x: number; y: number };
@@ -153,16 +156,16 @@ export const clampDragOffsetToRestrictedArea = (
  * @returns Trimmed points array
  */
 export const trimFreedrawPointsToRestrictedArea = (
-  points: readonly Point[],
+  points: readonly LocalPoint[],
   elementX: number,
   elementY: number,
   area: RestrictedAreaConfig,
-): Point[] => {
+): LocalPoint[] => {
   if (points.length === 0) {
     return [];
   }
 
-  const trimmedPoints: Point[] = [];
+  const trimmedPoints: LocalPoint[] = [];
   const areaMinX = area.x;
   const areaMinY = area.y;
   const areaMaxX = area.x + area.width;
@@ -184,7 +187,7 @@ export const trimFreedrawPointsToRestrictedArea = (
     y1: number,
     x2: number,
     y2: number,
-  ): Point | null => {
+  ): LocalPoint | null => {
     const dx = x2 - x1;
     const dy = y2 - y1;
 
@@ -224,17 +227,17 @@ export const trimFreedrawPointsToRestrictedArea = (
 
     // Return the intersection point closest to the segment start
     const t = tMin > 0 ? tMin : tMax;
-    return {
-      x: x1 + t * dx - elementX,
-      y: y1 + t * dy - elementY,
-    };
+    return pointFrom<LocalPoint>(
+      x1 + t * dx - elementX,
+      y1 + t * dy - elementY,
+    );
   };
 
   // Process each segment
   for (let i = 0; i < points.length; i++) {
     const point = points[i];
-    const absX = elementX + point.x;
-    const absY = elementY + point.y;
+    const absX = elementX + point[0];
+    const absY = elementY + point[1];
     const pointInside = isInside(absX, absY);
 
     if (i === 0) {
@@ -244,8 +247,8 @@ export const trimFreedrawPointsToRestrictedArea = (
       }
     } else {
       const prevPoint = points[i - 1];
-      const prevAbsX = elementX + prevPoint.x;
-      const prevAbsY = elementY + prevPoint.y;
+      const prevAbsX = elementX + prevPoint[0];
+      const prevAbsY = elementY + prevPoint[1];
       const prevInside = isInside(prevAbsX, prevAbsY);
 
       if (prevInside && pointInside) {

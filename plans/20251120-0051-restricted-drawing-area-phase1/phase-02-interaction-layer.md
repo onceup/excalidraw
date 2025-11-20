@@ -9,13 +9,10 @@
 
 ## Overview
 
-**Date:** 2025-11-20
-**Priority:** High
-**Status:** Planning
-**Dependencies:** Phase 1 Complete (type system, rendering, math utils)
-**Estimated Duration:** 2-3 days
+**Date:** 2025-11-20 **Priority:** High **Status:** Planning **Dependencies:** Phase 1 Complete (type system, rendering, math utils) **Estimated Duration:** 2-3 days
 
 Implement interaction layer to restrict drawing operations within defined boundary:
+
 - Pointer coordinate clamping during active drawing
 - Element creation constraint enforcement
 - Freedraw boundary crossing detection
@@ -27,6 +24,7 @@ Implement interaction layer to restrict drawing operations within defined bounda
 ### Pointer Event Flow Architecture
 
 **Entry Points (App.tsx):**
+
 ```
 handleCanvasPointerDown (line 6480)
   ↓
@@ -40,11 +38,13 @@ handleCanvasPointerUp (line 6909)
 ```
 
 **Scene Coordinate Conversion:**
+
 - `viewportCoordsToSceneCoords(event, this.state)` - Used ~30 times in App.tsx
 - Converts viewport (clientX, clientY) → scene coords (accounting for zoom/scroll)
 - Line 5915: `const scenePointer = viewportCoordsToSceneCoords(event, this.state);`
 
 **Critical Injection Points:**
+
 1. **Line 5915** (`handleCanvasPointerMove`): Scene pointer calculated - CLAMP HERE
 2. **Line 8133-8139** (`createGenericElementOnPointerDown`): Grid-snapped coords - VALIDATE HERE
 3. **Line 8934-8963** (freedraw point addition): Point-by-point building - CHECK BOUNDARY HERE
@@ -54,6 +54,7 @@ handleCanvasPointerUp (line 6909)
 ### Element Creation Patterns
 
 **Generic Elements (rectangles, ellipses, diamonds):**
+
 ```typescript
 // Line 8129: createGenericElementOnPointerDown
 const [gridX, gridY] = getGridPoint(pointerDownState.origin.x, pointerDownState.origin.y, ...);
@@ -63,6 +64,7 @@ this.setState({ newElement: element });
 ```
 
 **Freedraw Elements:**
+
 ```typescript
 // Line 8934-8963: Point-by-point building in handleCanvasPointerMove
 if (newElement.type === "freedraw") {
@@ -70,12 +72,13 @@ if (newElement.type === "freedraw") {
   const dy = pointerCoords.y - newElement.y;
   this.scene.mutateElement(newElement, {
     points: [...points, pointFrom<LocalPoint>(dx, dy)],
-    pressures: [...pressures, event.pressure]
+    pressures: [...pressures, event.pressure],
   });
 }
 ```
 
 **Linear Elements (arrows, lines):**
+
 ```typescript
 // Line 8964-9020: Two-point update pattern
 if (isLinearElement(newElement)) {
@@ -92,21 +95,24 @@ if (isLinearElement(newElement)) {
 ### PointerDownState Structure
 
 Key properties accessed during interaction:
+
 ```typescript
-pointerDownState.origin        // { x, y } - initial pointer position
-pointerDownState.lastCoords    // { x, y } - last recorded position
-pointerDownState.drag.offset   // Drag offset for selected elements
-pointerDownState.drag.hasOccurred // Has drag started?
+pointerDownState.origin; // { x, y } - initial pointer position
+pointerDownState.lastCoords; // { x, y } - last recorded position
+pointerDownState.drag.offset; // Drag offset for selected elements
+pointerDownState.drag.hasOccurred; // Has drag started?
 ```
 
 ### State Management Patterns
 
 **Element Lifecycle:**
+
 1. **Creation**: `this.scene.insertElement(element)` + `setState({ newElement: element })`
 2. **Update**: `this.scene.mutateElement(element, updates, { informMutation, isDragging })`
 3. **Finalization**: `setState({ newElement: null })` on pointer up (lines 6550, 9454, 10301)
 
 **Deletion Pattern:**
+
 ```typescript
 // Line 6541-6547: Discard short freedraw on touch
 this.updateScene({
@@ -121,27 +127,32 @@ this.updateScene({
 ### Functional Requirements
 
 **FR1: Pointer Coordinate Clamping**
+
 - Clamp scene coordinates to restricted area during active drawing
 - Apply to all tools: freedraw, arrows, lines, shapes
 - Preserve grid snapping behavior after clamping
 
 **FR2: Element Creation Validation**
+
 - Prevent element creation if initial point outside boundary
 - Show visual feedback (cursor change or warning)
 - Revert to selection tool if creation blocked
 
 **FR3: Freedraw Boundary Crossing Detection**
+
 - Monitor point-by-point freedraw building
 - Detect when stroke exits restricted area
 - Clear freedraw element on pointer release if exited boundary
 - Maintain existing touch-screen multi-finger handling (line 6535-6569)
 
 **FR4: Resize/Move Constraints**
+
 - Constrain drag operations to keep elements inside boundary
 - Prevent resizing beyond boundary edges
 - Handle rotated elements correctly (use AABB for simplicity)
 
 **FR5: Element Cleanup on Pointer Up**
+
 - Check if element exited boundary during interaction
 - Remove element if any part is outside boundary (strict mode)
 - Preserve element if completely inside (partial overlap allowed in soft mode)
@@ -149,16 +160,19 @@ this.updateScene({
 ### Non-Functional Requirements
 
 **NFR1: Performance**
+
 - Clamping logic: <0.1ms per pointer event (60fps = 16.6ms budget)
 - Boundary check: <0.5ms per element on pointer up
 - No noticeable lag during freedraw (runs on every pointermove)
 
 **NFR2: Backward Compatibility**
+
 - Feature disabled by default (`restrictedArea: null`)
 - No changes to existing drawing behavior when disabled
 - All existing tests continue passing
 
 **NFR3: Code Quality**
+
 - Type-safe coordinate transformations
 - Reuse existing math utilities (`isPointInRestrictedArea`, etc.)
 - Follow existing error handling patterns
@@ -168,22 +182,26 @@ this.updateScene({
 ### Design Decisions
 
 **Decision 1: Clamping Strategy**
+
 - **Chosen**: Clamp at scene coordinate level (after viewport conversion)
 - **Rationale**: Single point of truth, works across all tools
 - **Alternative**: Clamp per-tool (rejected - duplication, inconsistent behavior)
 
 **Decision 2: Freedraw Handling**
+
 - **Chosen**: Boundary crossing detection + cleanup on pointer up
 - **Rationale**: Allows partial drawing, matches user requirement ("clear on release")
 - **Alternative**: Point-level clamping (rejected - creates jagged edges at boundary)
 - **Alternative**: Terminate freedraw on exit (rejected - frustrating UX)
 
 **Decision 3: Enforcement Mode**
+
 - **Phase 2 Scope**: Soft enforcement only (clip at render, allow creation)
 - **Phase 3**: Add strict enforcement (prevent creation outside boundary)
 - **Rationale**: Progressive disclosure, validate soft mode first
 
 **Decision 4: Element Validation Timing**
+
 - **During drag**: Allow temporary boundary violations (performance)
 - **On pointer up**: Validate final element position, remove if outside
 - **Rationale**: Smoother interaction, single cleanup pass
@@ -228,6 +246,7 @@ export const hasFreedrawExitedArea = (
 ### Interaction Hooks Architecture
 
 **Hook Point 1: Pointer Move (Coordinate Clamping)**
+
 ```typescript
 // App.tsx:5915 - handleCanvasPointerMove
 private handleCanvasPointerMove = (event: React.PointerEvent<HTMLCanvasElement>) => {
@@ -252,6 +271,7 @@ private handleCanvasPointerMove = (event: React.PointerEvent<HTMLCanvasElement>)
 ```
 
 **Hook Point 2: Element Creation (Initial Validation)**
+
 ```typescript
 // App.tsx:8129 - createGenericElementOnPointerDown
 private createGenericElementOnPointerDown = (
@@ -277,6 +297,7 @@ private createGenericElementOnPointerDown = (
 ```
 
 **Hook Point 3: Freedraw Monitoring (Boundary Exit Detection)**
+
 ```typescript
 // App.tsx:8934 - Freedraw point addition in onPointerMoveFromPointerDownHandler
 if (newElement.type === "freedraw") {
@@ -301,6 +322,7 @@ if (newElement.type === "freedraw") {
 ```
 
 **Hook Point 4: Pointer Up (Element Cleanup)**
+
 ```typescript
 // App.tsx:6909 - handleCanvasPointerUp
 private handleCanvasPointerUp = (event: React.PointerEvent<HTMLCanvasElement>) => {
@@ -357,11 +379,13 @@ private shouldRemoveElementOutsideBoundary(
 ### Files to Modify
 
 **1. `packages/excalidraw/utils/restrictedArea.ts`**
+
 - Lines to add: ~40 (new functions)
 - Add: `clampPointToRestrictedArea()`, `hasFreedrawExitedArea()`
 - Impact: Core clamping logic, used by all interaction handlers
 
 **2. `packages/excalidraw/components/App.tsx`**
+
 - **Line 5915** (`handleCanvasPointerMove`): Add coordinate clamping (5-10 lines)
 - **Line 8129** (`createGenericElementOnPointerDown`): Add initial validation (8-12 lines)
 - **Line 8934-8963** (freedraw handling): Add boundary exit tracking (5-8 lines)
@@ -370,11 +394,13 @@ private shouldRemoveElementOutsideBoundary(
 - **New instance variable**: `private _freedrawExitedBoundary = false;`
 
 **3. `packages/excalidraw/types.ts`**
+
 - No changes needed (Phase 1 complete)
 
 ### Files to Create
 
 **Test Files:**
+
 - `packages/excalidraw/__tests__/restrictedArea.interaction.test.ts` (new, ~250 lines)
 
 ### Total Impact
@@ -389,6 +415,7 @@ private shouldRemoveElementOutsideBoundary(
 ### Step 1: Coordinate Clamping Utilities (0.5 days)
 
 **1.1** Extend `utils/restrictedArea.ts`:
+
 ```typescript
 export const clampPointToRestrictedArea = (
   point: Point,
@@ -417,11 +444,13 @@ export const hasFreedrawExitedArea = (
 ```
 
 **1.2** Write unit tests for new utilities:
+
 - Test clamping with various boundary positions
 - Test freedraw exit detection with multi-point strokes
 - Edge cases: point exactly on boundary, empty strokes
 
 **Success Criteria:**
+
 - All utility functions pass unit tests
 - Code coverage >80%
 - Type-safe, no any types
@@ -429,6 +458,7 @@ export const hasFreedrawExitedArea = (
 ### Step 2: Pointer Coordinate Clamping (0.5 days)
 
 **2.1** Modify `App.tsx:5915` (`handleCanvasPointerMove`):
+
 ```typescript
 private handleCanvasPointerMove = (
   event: React.PointerEvent<HTMLCanvasElement>,
@@ -454,11 +484,13 @@ private handleCanvasPointerMove = (
 ```
 
 **2.2** Test clamping behavior:
+
 - Draw rectangle starting inside, drag outside → should stop at boundary
 - Draw arrow from inside to outside → endpoint clamped
 - Verify grid snapping still works after clamping
 
 **Success Criteria:**
+
 - Cursor movement stops at boundary during drawing
 - Grid snapping preserved
 - No performance regression (measure with Chrome DevTools)
@@ -466,6 +498,7 @@ private handleCanvasPointerMove = (
 ### Step 3: Element Creation Validation (0.5 days)
 
 **3.1** Modify `App.tsx:8129` (`createGenericElementOnPointerDown`):
+
 ```typescript
 private createGenericElementOnPointerDown = (
   elementType: ExcalidrawGenericElement["type"] | "embeddable",
@@ -492,11 +525,13 @@ private createGenericElementOnPointerDown = (
 ```
 
 **3.2** Test blocked creation:
+
 - Click outside boundary → no element created
 - Click inside boundary → element created normally
 - Verify for all element types (rectangle, ellipse, arrow, etc.)
 
 **Success Criteria:**
+
 - Elements only created inside boundary
 - No console errors or warnings
 - State remains consistent after blocked creation
@@ -504,12 +539,14 @@ private createGenericElementOnPointerDown = (
 ### Step 4: Freedraw Boundary Exit Detection (0.5 days)
 
 **4.1** Add instance variable to App class:
+
 ```typescript
 // App.tsx class properties
 private _freedrawExitedBoundary = false;
 ```
 
 **4.2** Modify freedraw handling in `App.tsx:8934`:
+
 ```typescript
 if (newElement.type === "freedraw") {
   const dx = pointerCoords.x - newElement.x;
@@ -523,14 +560,14 @@ if (newElement.type === "freedraw") {
   this.scene.mutateElement(
     newElement,
     { points, pressures },
-    { informMutation: false, isDragging: false }
+    { informMutation: false, isDragging: false },
   );
 
   // Track boundary exit
   if (this.state.restrictedArea?.enabled) {
     const hasExited = hasFreedrawExitedArea(
       { ...newElement, points } as ExcalidrawFreeDrawElement,
-      this.state.restrictedArea
+      this.state.restrictedArea,
     );
     this._freedrawExitedBoundary = hasExited;
   }
@@ -540,11 +577,13 @@ if (newElement.type === "freedraw") {
 ```
 
 **4.3** Test freedraw exit tracking:
+
 - Draw stroke inside boundary → `_freedrawExitedBoundary = false`
 - Draw stroke that crosses boundary → `_freedrawExitedBoundary = true`
 - Verify flag resets on new stroke
 
 **Success Criteria:**
+
 - Exit flag accurately tracks boundary crossing
 - No false positives/negatives
 - Works with pressure/non-pressure strokes
@@ -552,6 +591,7 @@ if (newElement.type === "freedraw") {
 ### Step 5: Element Cleanup on Pointer Up (0.5 days)
 
 **5.1** Add helper method to App class:
+
 ```typescript
 private shouldRemoveElementOutsideBoundary(
   element: ExcalidrawElement,
@@ -571,6 +611,7 @@ private shouldRemoveElementOutsideBoundary(
 ```
 
 **5.2** Modify `App.tsx:6909` (`handleCanvasPointerUp`):
+
 ```typescript
 private handleCanvasPointerUp = (
   event: React.PointerEvent<HTMLCanvasElement>,
@@ -618,12 +659,14 @@ private handleCanvasPointerUp = (
 ```
 
 **5.3** Test cleanup behavior:
+
 - Draw freedraw outside → cleared on release
 - Draw rectangle partially outside → cleared on release
 - Draw element completely inside → preserved
 - Verify undo history not polluted with removed elements
 
 **Success Criteria:**
+
 - Elements cleared when exiting boundary
 - No memory leaks (check with Chrome Memory Profiler)
 - Undo/redo not affected
@@ -681,12 +724,14 @@ describe("Restricted Area - Interaction Layer", () => {
 ```
 
 **6.2** Run full test suite:
+
 ```bash
 yarn test:update
 yarn test:typecheck
 ```
 
 **Success Criteria:**
+
 - All new tests pass
 - All existing tests still pass
 - No TypeScript errors
@@ -695,24 +740,28 @@ yarn test:typecheck
 ### Step 7: Manual Testing & Polish (0.25 days)
 
 **7.1** Test all drawing tools:
+
 - Rectangle, ellipse, diamond (generic shapes)
 - Arrow, line (linear elements)
 - Freedraw (with mouse, pen, touch)
 - Text element (special case - skip for Phase 2)
 
 **7.2** Test edge cases:
+
 - Rapid drawing at boundary edge
 - Multi-touch on touch devices (existing handling)
 - Drawing while zoomed in/out
 - Drawing while panned (scrollX/scrollY offset)
 
 **7.3** Performance testing:
+
 - Open Chrome DevTools Performance tab
 - Record drawing session with 500+ elements
 - Verify no frame drops during clamped drawing
 - Check memory usage (no leaks)
 
 **Success Criteria:**
+
 - Smooth interaction at boundary
 - No visual glitches or lag
 - Consistent behavior across tools
@@ -723,26 +772,31 @@ yarn test:typecheck
 ### Functional Criteria
 
 ✅ **SC1: Coordinate Clamping**
+
 - Pointer coordinates clamped during active drawing
 - Works for all drawing tools (shapes, arrows, freedraw)
 - Grid snapping preserved after clamping
 
 ✅ **SC2: Element Creation Blocked**
+
 - Cannot create elements outside boundary
 - No state corruption from blocked creation
 - Clean error handling (no console errors)
 
 ✅ **SC3: Freedraw Cleanup**
+
 - Freedraw cleared on release if exited boundary
 - Detection accurate (no false positives/negatives)
 - Preserves strokes completely inside
 
 ✅ **SC4: Generic Shape Cleanup**
+
 - Rectangles/ellipses/arrows cleared if partially outside
 - Detection uses AABB (handles rotation correctly)
 - Cleanup happens on pointer up (not during drag)
 
 ✅ **SC5: Backward Compatibility**
+
 - Feature disabled when `restrictedArea: null`
 - All existing tests pass
 - No breaking changes to API
@@ -750,16 +804,19 @@ yarn test:typecheck
 ### Non-Functional Criteria
 
 ✅ **SC6: Performance**
+
 - Clamping: <0.1ms per event
 - Boundary check: <0.5ms per element
 - Maintains 60fps during drawing
 
 ✅ **SC7: Code Quality**
+
 - Type-safe (no any types)
 - Follows existing patterns (matches frameClip, etc.)
 - Well-commented complex logic
 
 ✅ **SC8: Test Coverage**
+
 - Unit tests: >80% coverage
 - Integration tests: All user flows covered
 - Performance tests: Frame time regression detection
@@ -769,6 +826,7 @@ yarn test:typecheck
 ### High Risks
 
 **R1: Performance Degradation**
+
 - **Risk**: Clamping on every pointermove slows drawing
 - **Likelihood**: Medium
 - **Impact**: High (breaks 60fps target)
@@ -779,6 +837,7 @@ yarn test:typecheck
   - Consider throttling for freedraw (every Nth point)
 
 **R2: Freedraw Edge Cases**
+
 - **Risk**: Inaccurate exit detection (false positives)
 - **Likelihood**: Medium
 - **Impact**: High (user frustration, lost work)
@@ -789,6 +848,7 @@ yarn test:typecheck
   - Future: Undo support for cleared strokes
 
 **R3: Multi-Touch Conflicts**
+
 - **Risk**: Breaks existing touch handling (line 6535-6569)
 - **Likelihood**: Low
 - **Impact**: Medium (touch users affected)
@@ -800,6 +860,7 @@ yarn test:typecheck
 ### Medium Risks
 
 **R4: Coordinate Conversion Edge Cases**
+
 - **Risk**: Clamping breaks with extreme zoom/scroll
 - **Likelihood**: Low
 - **Impact**: Medium (visual glitches)
@@ -809,6 +870,7 @@ yarn test:typecheck
   - Validate clamp coords are in scene space (not viewport)
 
 **R5: State Synchronization**
+
 - **Risk**: `_freedrawExitedBoundary` out of sync with state
 - **Likelihood**: Low
 - **Impact**: Low (single stroke affected)
@@ -822,6 +884,7 @@ yarn test:typecheck
 ### Unit Tests (0.5 days)
 
 **Utilities (`restrictedArea.test.ts`):**
+
 - `clampPointToRestrictedArea()`: 10 test cases
   - Inside boundary → unchanged
   - Outside X → clamped to max/min X
@@ -840,7 +903,9 @@ yarn test:typecheck
 ```typescript
 describe("Rectangle Creation", () => {
   it("allows creation inside boundary", () => {
-    h.setState({ restrictedArea: { enabled: true, x: 0, y: 0, w: 1024, h: 1024 } });
+    h.setState({
+      restrictedArea: { enabled: true, x: 0, y: 0, w: 1024, h: 1024 },
+    });
     mouse.down(500, 500);
     mouse.move(600, 600);
     mouse.up();
@@ -849,7 +914,9 @@ describe("Rectangle Creation", () => {
   });
 
   it("blocks creation outside boundary", () => {
-    h.setState({ restrictedArea: { enabled: true, x: 0, y: 0, w: 1024, h: 1024 } });
+    h.setState({
+      restrictedArea: { enabled: true, x: 0, y: 0, w: 1024, h: 1024 },
+    });
     mouse.down(1500, 1500); // Outside
     mouse.move(1600, 1600);
     mouse.up();
@@ -857,7 +924,9 @@ describe("Rectangle Creation", () => {
   });
 
   it("clamps drag to boundary", () => {
-    h.setState({ restrictedArea: { enabled: true, x: 0, y: 0, w: 1024, h: 1024 } });
+    h.setState({
+      restrictedArea: { enabled: true, x: 0, y: 0, w: 1024, h: 1024 },
+    });
     mouse.down(500, 500);
     mouse.move(1500, 1500); // Drag outside
     mouse.up();
@@ -869,7 +938,9 @@ describe("Rectangle Creation", () => {
 
 describe("Freedraw Cleanup", () => {
   it("removes stroke exiting boundary", () => {
-    h.setState({ restrictedArea: { enabled: true, x: 0, y: 0, w: 1024, h: 1024 } });
+    h.setState({
+      restrictedArea: { enabled: true, x: 0, y: 0, w: 1024, h: 1024 },
+    });
     mouse.down(500, 500);
     mouse.move(600, 600);
     mouse.move(1500, 1500); // Exit boundary
@@ -878,7 +949,9 @@ describe("Freedraw Cleanup", () => {
   });
 
   it("preserves stroke inside boundary", () => {
-    h.setState({ restrictedArea: { enabled: true, x: 0, y: 0, w: 1024, h: 1024 } });
+    h.setState({
+      restrictedArea: { enabled: true, x: 0, y: 0, w: 1024, h: 1024 },
+    });
     mouse.down(500, 500);
     mouse.move(600, 600);
     mouse.move(700, 700); // Stay inside
@@ -890,7 +963,9 @@ describe("Freedraw Cleanup", () => {
 
 describe("Arrow Clamping", () => {
   it("clamps second point to boundary", () => {
-    h.setState({ restrictedArea: { enabled: true, x: 0, y: 0, w: 1024, h: 1024 } });
+    h.setState({
+      restrictedArea: { enabled: true, x: 0, y: 0, w: 1024, h: 1024 },
+    });
     mouse.down(500, 500);
     mouse.move(1500, 1500); // Drag endpoint outside
     mouse.up();
@@ -905,6 +980,7 @@ describe("Arrow Clamping", () => {
 ### Performance Tests
 
 **Benchmark Script:**
+
 ```typescript
 it("maintains <0.1ms clamping overhead", () => {
   const area = { enabled: true, x: 0, y: 0, width: 1024, height: 1024 };
@@ -924,6 +1000,7 @@ it("maintains <0.1ms clamping overhead", () => {
 ### Manual Test Plan
 
 **Session 1: Drawing Tools (30 min)**
+
 1. Enable restricted area (1024x1024)
 2. Test each tool: rectangle, ellipse, diamond, arrow, line, freedraw
 3. For each tool:
@@ -933,6 +1010,7 @@ it("maintains <0.1ms clamping overhead", () => {
 4. Record any visual glitches, lag, or unexpected behavior
 
 **Session 2: Edge Cases (30 min)**
+
 1. Test with different zoom levels (0.1x, 1x, 5x, 10x)
 2. Test with canvas panned (large scrollX/scrollY offsets)
 3. Test rapid drawing at boundary edge
@@ -940,6 +1018,7 @@ it("maintains <0.1ms clamping overhead", () => {
 5. Test freedraw with pen/stylus (pressure sensitivity)
 
 **Session 3: Performance (15 min)**
+
 1. Open Chrome DevTools → Performance tab
 2. Record session: draw 100 freedraw strokes
 3. Analyze frame times (should be <16.6ms)
@@ -957,12 +1036,14 @@ it("maintains <0.1ms clamping overhead", () => {
 ## Dependencies & Blockers
 
 **Dependencies:**
+
 - ✅ Phase 1 Complete: Type system, rendering, math utilities
 - ✅ `isPointInRestrictedArea()` utility function
 - ✅ `isElementCompletelyInRestrictedArea()` utility function
 - ✅ `getElementBounds()` from @excalidraw/element
 
 **Blockers:**
+
 - None identified
 
 ## Next Steps (Phase 3)
@@ -970,17 +1051,20 @@ it("maintains <0.1ms clamping overhead", () => {
 After Phase 2 completion:
 
 1. **Strict Enforcement Mode**
+
    - Add `enforcement: "strict"` mode
    - Prevent ANY drawing outside boundary (vs cleanup after)
    - Visual feedback (cursor change, toast notifications)
 
 2. **Advanced Constraints**
+
    - Text element handling
    - Paste/drop constraints
    - Selection drag constraints
    - Multi-element operations
 
 3. **UX Enhancements**
+
    - Boundary resize handles (interactive editing)
    - Toast notifications for blocked/cleared operations
    - Undo support for cleared elements
@@ -993,11 +1077,10 @@ After Phase 2 completion:
 
 ---
 
-**Total Estimated Effort:** 2-3 days
-**Priority Tasks:** Steps 1-5 (core functionality)
-**Optional Polish:** Step 7 (manual testing can be iterative)
+**Total Estimated Effort:** 2-3 days **Priority Tasks:** Steps 1-5 (core functionality) **Optional Polish:** Step 7 (manual testing can be iterative)
 
 **Review Checkpoints:**
+
 - After Step 2: Verify clamping works for basic shapes
 - After Step 4: Verify freedraw cleanup works correctly
 - After Step 6: Full code review before merge
